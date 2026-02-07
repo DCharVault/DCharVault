@@ -1,17 +1,19 @@
 name: Build DCharVault
 
 on:
-  # 1. Manual Button (Saves Minutes!)
+  # 1. Enables the manual "Run Workflow" button
   workflow_dispatch:
   
-  # 2. Only run on Push if meaningful code changes (Ignore README updates)
+  # 2. Only run automatically if you change C++ or CMake files (ignore READMEs)
   push:
     branches: [ "main" ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
-
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.hpp'
+      - '**.qml'
+      - 'CMakeLists.txt'
+      - '.github/workflows/**'
 jobs:
   # ============================================================================
   # JOB 1: LINUX (Ubuntu)
@@ -78,7 +80,7 @@ jobs:
       run: cmake --build build --config Release
 
 # ============================================================================
-  # JOB 3: ANDROID (APK Build) - FIXED PATHS
+  # JOB 3: ANDROID (APK Build) - FIXED HOST TOOLS
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
@@ -99,8 +101,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential tar curl zip unzip
 
-    # 1. Install Libsodium for Android using VCPKG
-    - name: Install Dependencies (VCPKG)
+    # 1. Install Libsodium (Android) via VCPKG
+    - name: Install Libsodium (VCPKG)
       run: |
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
@@ -108,8 +110,18 @@ jobs:
         mv vcpkg_installed/arm64-android vcpkg_installed/arm64-v8a
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/vcpkg_installed" >> $GITHUB_ENV
 
-    # 2. Install Qt 6.8 for Android
-    - name: Install Qt 6.8 (Android)
+    # 2. INSTALL HOST QT (Linux Desktop) - REQUIRED for tools like 'moc'
+    - name: Install Qt Host (Linux)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'gcc_64'
+        cache: true  # Saves download time on future runs
+
+    # 3. INSTALL TARGET QT (Android) - The actual libraries for the APK
+    - name: Install Qt Target (Android)
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.8.0'
@@ -117,16 +129,19 @@ jobs:
         target: 'android'
         arch: 'android_arm64_v8a'
         modules: 'qt5compat qtshadertools qtquick3d'
-        cache: true  # <--- SAVES TIME: Caches the Qt download!
+        cache: true
 
-    # 3. Configure CMake (Explicitly passing the Host Path)
+    # 4. Configure CMake (Now pointing to the REAL Host Path)
     - name: Configure CMake
       run: |
+        # Dynamic path to the 'gcc_64' folder we just installed in Step 2
+        export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/gcc_64
+        
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
         -DQT_ANDROID_BUILD_ALL_ABIS=ON \
         -DANDROID_ABI=arm64-v8a \
-        -DQT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/gcc_64
+        -DQT_HOST_PATH=$QT_HOST_PATH
 
-    # 4. Build the APK
+    # 5. Build the APK
     - name: Build APK
       run: cmake --build build --config Release
