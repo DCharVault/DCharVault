@@ -14,8 +14,15 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 # --- WINDOWS SETUP ---
 if(WIN32 AND NOT ANDROID)
-    # CONFIGURATION: Point this to your VCPKG 'installed' folder
-    set(SODIUM_ROOT "D:/vcpkg/installed/x64-windows")
+    # 1. Look for the path in System Environment Variables (Best Practice for Teams/CI)
+    if(DEFINED ENV{SODIUM_ROOT_ENV})
+        set(SODIUM_ROOT $ENV{SODIUM_ROOT_ENV})
+        message(STATUS "Using Sodium from Environment: ${SODIUM_ROOT}")
+    else()
+        # 2. Fallback: Use local hardcoded path (Keeps it working for you)
+        set(SODIUM_ROOT "D:/vcpkg/installed/x64-windows")
+        message(WARNING "Environment variable SODIUM_ROOT_ENV not found. Using local fallback: ${SODIUM_ROOT}")
+    endif()
 
     # Safety Check
     if(NOT EXISTS "${SODIUM_ROOT}/include/sodium.h")
@@ -41,15 +48,21 @@ endif()
 
 # --- ANDROID SETUP ---
 if(ANDROID)
-    # CONFIGURATION: Point this to where you copied your Android libs
-    # (e.g., D:/AndroidLibs/libsodium)
-    set(SODIUM_ANDROID_ROOT "D:/AndroidLibs/libsodium")
+    # 1. Look for the path in System Environment Variables
+    if(DEFINED ENV{SODIUM_ANDROID_ROOT_ENV})
+        set(SODIUM_ANDROID_ROOT $ENV{SODIUM_ANDROID_ROOT_ENV})
+        message(STATUS "Using Android Sodium from Environment: ${SODIUM_ANDROID_ROOT}")
+    else()
+        # 2. Fallback: Use local hardcoded path
+        set(SODIUM_ANDROID_ROOT "D:/AndroidLibs/libsodium")
+        message(WARNING "Environment variable SODIUM_ANDROID_ROOT_ENV not found. Using local fallback.")
+    endif()
 
-    # 1. Auto-detect Architecture (arm64-v8a, armeabi-v7a, x86, etc.)
+    # 3. Auto-detect Architecture (arm64-v8a, armeabi-v7a, x86, etc.)
     # ANDROID_ABI is automatically set by the Android deployment tool.
     message(STATUS "Configuring for Android Arch: ${ANDROID_ABI}")
 
-    # 2. Build the path to the static library (.a)
+    # 4. Build the path to the static library (.a)
     # Assumes structure: .../libsodium/arm64-v8a/lib/libsodium.a
     set(SODIUM_LIB_PATH "${SODIUM_ANDROID_ROOT}/${ANDROID_ABI}/lib/libsodium.a")
 
