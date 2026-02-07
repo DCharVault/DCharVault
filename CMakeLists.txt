@@ -81,6 +81,18 @@ if(ANDROID)
     message(STATUS "Android Security Core linked: ${SODIUM_LIB}")
 endif()
 
+# --- LINUX / UNIX SETUP ---
+if(UNIX AND NOT ANDROID AND NOT APPLE)
+    # On Linux, we use PkgConfig to find system libraries automatically
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SODIUM REQUIRED libsodium)
+
+    # Setup Headers & Libs
+    include_directories(${SODIUM_INCLUDE_DIRS})
+    set(SODIUM_LIB ${SODIUM_LIBRARIES})
+
+    message(STATUS "Linux Security Core linked: ${SODIUM_LIB}")
+endif()
 
 qt_add_executable(appDCharVault
     MANUAL_FINALIZATION
