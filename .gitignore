@@ -1,0 +1,15 @@
+# Qt & CMake Build Files
+build/
+release/
+debug/
+*.user
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.ninja
+*.obj
+*.exe
+*.dll
+.vscode/
+.idea/
+*.DS_Store
