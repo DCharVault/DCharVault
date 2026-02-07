@@ -72,7 +72,7 @@ jobs:
       run: cmake --build build --config Release
 
 # ============================================================================
-  # JOB 3: ANDROID (APK Build) - The "Boss Level"
+  # JOB 3: ANDROID (APK Build) - FIXED MANIFEST MODE
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
@@ -88,6 +88,12 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
+    # ADDED: Essential build tools so vcpkg can compile libsodium from source
+    - name: Install System Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential tar curl zip unzip
+
     # 1. Install Libsodium for Android using VCPKG
     - name: Install Dependencies (VCPKG)
       run: |
@@ -95,11 +101,12 @@ jobs:
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
         
-        # Install libsodium for ARM64 Android
-        ./vcpkg/vcpkg install libsodium:arm64-android
+        # FIXED: Use Manifest Mode syntax (no package name, just triplet)
+        # This tells vcpkg: "Read vcpkg.json and build it for Android ARM64"
+        ./vcpkg/vcpkg install --triplet arm64-android
         
-        # HACK: Vcpkg creates a folder named 'arm64-android', but Android creates 'arm64-v8a'.
-        # We simply rename it so your CMakeLists.txt finds it automatically.
+        # HACK: Vcpkg creates 'vcpkg_installed/arm64-android', but Qt/CMake expects 'arm64-v8a'.
+        # We rename it so your CMakeLists.txt finds it automatically.
         mv vcpkg_installed/arm64-android vcpkg_installed/arm64-v8a
         
         # Point your Environment Variable to the parent folder
