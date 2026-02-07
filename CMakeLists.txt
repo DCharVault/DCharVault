@@ -9,17 +9,17 @@ find_package(Qt6 REQUIRED COMPONENTS Quick Sql)
 qt_standard_project_setup(REQUIRES 6.6)
 
 # ==============================================================================
-# 3. PLATFORM SPECIFIC SETUP (Manual & Offline)
+# 3. PLATFORM SPECIFIC SETUP (Windows, Android, Linux)
 # ==============================================================================
 
 # --- WINDOWS SETUP ---
 if(WIN32 AND NOT ANDROID)
-    # 1. Look for the path in System Environment Variables (Best Practice for Teams/CI)
+    # 1. Look for the path in System Environment Variables
     if(DEFINED ENV{SODIUM_ROOT_ENV})
         set(SODIUM_ROOT $ENV{SODIUM_ROOT_ENV})
         message(STATUS "Using Sodium from Environment: ${SODIUM_ROOT}")
     else()
-        # 2. Fallback: Use local hardcoded path (Keeps it working for you)
+        # 2. Fallback: Use local hardcoded path
         set(SODIUM_ROOT "D:/vcpkg/installed/x64-windows")
         message(WARNING "Environment variable SODIUM_ROOT_ENV not found. Using local fallback: ${SODIUM_ROOT}")
     endif()
@@ -58,12 +58,10 @@ if(ANDROID)
         message(WARNING "Environment variable SODIUM_ANDROID_ROOT_ENV not found. Using local fallback.")
     endif()
 
-    # 3. Auto-detect Architecture (arm64-v8a, armeabi-v7a, x86, etc.)
-    # ANDROID_ABI is automatically set by the Android deployment tool.
+    # 3. Auto-detect Architecture
     message(STATUS "Configuring for Android Arch: ${ANDROID_ABI}")
 
     # 4. Build the path to the static library (.a)
-    # Assumes structure: .../libsodium/arm64-v8a/lib/libsodium.a
     set(SODIUM_LIB_PATH "${SODIUM_ANDROID_ROOT}/${ANDROID_ABI}/lib/libsodium.a")
 
     # Safety Check
@@ -75,7 +73,7 @@ if(ANDROID)
     include_directories("${SODIUM_ANDROID_ROOT}/include")
     set(SODIUM_LIB "${SODIUM_LIB_PATH}")
 
-    # Android specific logging (useful for debugging encrypted crashes)
+    # Android specific logging
     find_library(ANDROID_LOG_LIB log)
 
     message(STATUS "Android Security Core linked: ${SODIUM_LIB}")
@@ -87,13 +85,20 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SODIUM REQUIRED libsodium)
 
-    # Setup Headers & Libs
+    # CRITICAL FIX: Explicitly include the directories found by PkgConfig
+    # This fixes the 'sodium.h not found' error
     include_directories(${SODIUM_INCLUDE_DIRS})
+    link_directories(${SODIUM_LIBRARY_DIRS})
+    
     set(SODIUM_LIB ${SODIUM_LIBRARIES})
 
+    message(STATUS "Linux Sodium Includes: ${SODIUM_INCLUDE_DIRS}")
     message(STATUS "Linux Security Core linked: ${SODIUM_LIB}")
 endif()
 
+# ==============================================================================
+# 4. TARGET DEFINITION
+# ==============================================================================
 qt_add_executable(appDCharVault
     MANUAL_FINALIZATION
     main.cpp
@@ -105,26 +110,25 @@ qt_add_qml_module(appDCharVault
     QML_FILES
         Main.qml
         ui/login.qml
-    SOURCES
+    SOURCES 
         model/VaultModel.cpp
         viewmodel/LoginViewModel.cpp
 )
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
+# Qt for iOS/macOS bundle settings
 set_target_properties(appDCharVault PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appDCharVault
+    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appDCharVault
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
 
+# Link Libraries
 target_link_libraries(appDCharVault
     PRIVATE Qt6::Quick Qt6::Sql
-    PRIVATE ${SODIUM_LIB}      # D: drive library
-    PRIVATE ${ANDROID_LOG_LIB} # Android logger
+    PRIVATE ${SODIUM_LIB}      
+    PRIVATE ${ANDROID_LOG_LIB} 
 )
 
 include(GNUInstallDirs)
