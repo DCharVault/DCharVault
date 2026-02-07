@@ -7,8 +7,11 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # ============================================================================
+  # JOB 1: LINUX (Ubuntu)
+  # ============================================================================
   build-linux:
-    name: Linux (Ubuntu)
+    name: 🐧 Linux (Ubuntu)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -32,23 +35,25 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
-# ============================================================================
-  # JOB 2: WINDOWS (MSVC)
+  # ============================================================================
+  # JOB 2: WINDOWS (MSVC) - MANIFEST MODE
   # ============================================================================
   build-windows:
-    name: Windows (MSVC)
+    name: 🪟 Windows (MSVC)
     runs-on: windows-latest
     
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    #Instead of downloading vcpkg, we use the one already on the server.
-    - name: Install Libsodium
+    # FIXED: Use Manifest Mode (read vcpkg.json)
+    - name: Install Dependencies
       run: |
-        vcpkg install libsodium:x64-windows
-        # We tell your CMakeLists where to find it using the system variable
-        echo "SODIUM_ROOT_ENV=$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        # 1. Install using the vcpkg.json file
+        vcpkg install --triplet x64-windows
+        
+        # 2. Point SODIUM_ROOT_ENV to the local 'vcpkg_installed' folder
+        echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Install Qt 6.8
       uses: jurplel/install-qt-action@v3
@@ -56,9 +61,11 @@ jobs:
         version: '6.8.0'
         host: 'windows'
         arch: 'win64_msvc2022_64'
+        # ADDED: Same modules as Linux for safety
+        modules: 'qt5compat qtshadertools qtquick3d'
 
     - name: Configure CMake
-      # use the system-provided toolchain file
+      # We use the global toolchain + our custom ENV variable for paths
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
     - name: Build
