@@ -1,10 +1,10 @@
 name: Build DCharVault
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Manual button
   push:
     branches: [ "main" ]
-    paths:
+    paths: # Only run on code changes to save minutes
       - '**.cpp'
       - '**.h'
       - '**.hpp'
@@ -14,7 +14,7 @@ on:
 
 jobs:
   # ============================================================================
-  # JOB 1: LINUX (Ubuntu)
+  # JOB 1: LINUX (Ubuntu) - Qt 6.6.3 LTS
   # ============================================================================
   build-linux:
     name: 🐧 Linux (Ubuntu)
@@ -28,12 +28,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
 
-    - name: Install Qt 6.7 (Stable)
+    - name: Install Qt 6.6.3
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.2'
+        version: '6.6.3'
         host: 'linux'
+        # Default architecture (gcc_64) is automatically selected
         modules: 'qt5compat qtshadertools qtquick3d'
+        cache: true
 
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -42,7 +44,7 @@ jobs:
       run: cmake --build build --config Release
 
   # ============================================================================
-  # JOB 2: WINDOWS (MSVC)
+  # JOB 2: WINDOWS (MSVC) - Qt 6.6.3 LTS
   # ============================================================================
   build-windows:
     name: 🪟 Windows (MSVC)
@@ -57,13 +59,14 @@ jobs:
         vcpkg install --triplet x64-windows
         echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-    - name: Install Qt 6.7 (Stable)
+    - name: Install Qt 6.6.3
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.2'
+        version: '6.6.3'
         host: 'windows'
-        arch: 'win64_msvc2019_64' # 6.7 uses the 2019 kit (compatible with 2022)
+        arch: 'win64_msvc2019_64' # The standard kit for Qt 6.6
         modules: 'qt5compat qtshadertools qtquick3d'
+        cache: true
 
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
@@ -72,7 +75,7 @@ jobs:
       run: cmake --build build --config Release
 
   # ============================================================================
-  # JOB 3: ANDROID (APK Build)
+  # JOB 3: ANDROID (ARM64) - Qt 6.6.3 LTS
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
@@ -102,21 +105,21 @@ jobs:
         mv vcpkg_installed/arm64-android vcpkg_installed/arm64-v8a
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/vcpkg_installed" >> $GITHUB_ENV
 
-    # 2. INSTALL HOST QT (Linux Desktop Tools)
-    - name: Install Qt Host (Linux)
+    # 2. INSTALL HOST QT (Linux Tools)
+    - name: Install Qt Host
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.2'
+        version: '6.6.3'
         host: 'linux'
         target: 'desktop'
-        arch: 'gcc_64'
+        # Default arch (gcc_64) auto-selected
         cache: true
 
-    # 3. INSTALL TARGET QT (Android Libraries)
-    - name: Install Qt Target (Android)
+    # 3. INSTALL TARGET QT (Android Libs)
+    - name: Install Qt Target
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.2'
+        version: '6.6.3'
         host: 'linux'
         target: 'android'
         arch: 'android_arm64_v8a'
@@ -126,8 +129,8 @@ jobs:
     # 4. Configure CMake
     - name: Configure CMake
       run: |
-        # Point to the 6.7.2 Host Tools
-        export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.7.2/gcc_64
+        # Point to the 6.6.3 Host Tools
+        export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
         
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
         -DQT_ANDROID_BUILD_ALL_ABIS=ON \
