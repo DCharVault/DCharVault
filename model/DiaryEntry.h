@@ -6,8 +6,8 @@
 
 struct DiaryEntry{
     bool bookmarked = false;
-    int64_t createdAt;
-    int64_t updatedAt;
+    int64_t createdAt=0;
+    int64_t updatedAt=0;
     std::string id;
     std::string title;
     std::string content;
