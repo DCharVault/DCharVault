@@ -1,6 +1,7 @@
 #include"DiaryManager.h"
 
-[[nodiscard]] DiaryError DiaryManager::setTitle(const std::string& id, const std::string& newTitle) const noexcept{
+//setters
+[[nodiscard]] DiaryError DiaryManager::setTitle(const std::string& id, const std::string& newTitle) noexcept{
     if(id.empty()) return DiaryError::EmptyId;
     // if (!isValidId(id)) return nullptr; -- to be implemented later
     for(const auto& entry : entries){
@@ -12,8 +13,7 @@
     }
     return DiaryError::EntryNotFound;
 }
-
-[[nodiscard]] DiaryError DiaryManager::setContent(const std::string& id, const std::string& newContent) const noexcept{
+[[nodiscard]] DiaryError DiaryManager::setContent(const std::string& id, const std::string& newContent) noexcept{
     if(id.empty()) return DiaryError::EmptyId;
     for(const auto& entry : entries){
         if(entry.id == id){
@@ -25,6 +25,7 @@
     return DiaryError::EntryNotFound;
 }
 
+//getters
 const std::string* DiaryManager::getTitle(const std::string& id) const noexcept{
     if(id.empty()) return nullptr;
     // if (!isValidId(id)) return nullptr; -- to be implemented later
@@ -35,7 +36,6 @@ const std::string* DiaryManager::getTitle(const std::string& id) const noexcept{
     }
     return nullptr;
 }
-
 const std::string* DiaryManager::getContent(const std::string& id) const noexcept{
     if(id.empty()) return nullptr;
     // if (!isValidId(id)) return nullptr; -- to be implemented later
@@ -46,6 +46,7 @@ const std::string* DiaryManager::getContent(const std::string& id) const noexcep
     }
     return nullptr;
 }
+
 
 const DiaryEntry* DiaryManager::readEntry(std::string& id) const noexcept{ // not & since reference returns cannot be null if id page do not found
     if(id.empty()) return nullptr;
@@ -89,7 +90,7 @@ const DiaryEntry* DiaryManager::createEntry(const std::string &title, const std:
     return DiaryError::EntryNotFound;
 }
 
-DiaryError DiaryManager::deleteEntry(const std::string &id){
+[[nodiscard]] DiaryError DiaryManager::deleteEntry(const std::string &id){
     if(id.empty()) return DiaryError::EmptyId;
 
     for(auto it=entries.begin(); it!=entries.end(); ++it){
