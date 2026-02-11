@@ -6,63 +6,85 @@
 #include"DiaryEntry.h"
 
 enum class DiaryError{
-    None, 
+    None,
 
     // Validation
-    EmptyId, 
-    EmptyTitle, 
-    EmptyContent, 
-    InvalidId, 
-    InvalidDateTime, 
+    EmptyId,
+    EmptyTitle,
+    EmptyContent,
+    InvalidId,
+    InvalidDateTime,
 
-    // Generation 
-    IdGenerationFailed, 
-    DateTimeGenerationFailed, 
+    // Generation
+    IdGenerationFailed,
+    DateTimeGenerationFailed,
 
-    // State 
-    EntryNotFound, 
-    EntryAlreadyExists, 
+    // State
+    EntryNotFound,
+    EntryAlreadyExists,
 
-    // Persistence 
-    SerializationFailed, 
-    DeserializationFailed, 
-    
-    // Security 
-    EncryptionFailed, 
-    DecryptionFailed, 
+    // Persistence
+    SerializationFailed,
+    DeserializationFailed,
+
+    // Security
+    EncryptionFailed,
+    DecryptionFailed,
     IntegrityCheckFailed,
 };
 
 struct DiaryEntrySummary {
-    std::string_view id;
-    std::string_view title;
+    std::string id;    // CHANGED: string_view -> string (Safety over micro-optimization)
+    std::string title; // CHANGED: string_view -> string
     int64_t createdAt;
     int64_t updatedAt;
     bool bookmarked;
 };
 
 class DiaryManager{
-    public:
-        const std::vector<DiaryEntry>& readEntries() const;
-        const DiaryEntry* readEntry(const std::string& id) const;
-        std::string createEntry(const std::string& title, const std::string& content); // returns entry id 
-        bool updateEntry(const std::string& id, const std::string& title, const std::string& content);
-        bool deleteEntry(const std::string& id);
-    
-    private:
-        std::vector<DiaryEntry> entries;
-        std::string generateID();
+public:
+    const std::vector<DiaryEntrySummary>& readEntrySummaries() const noexcept; // may use this for reading entries
+    // const std::vector<DiaryEntry>& readEntries() const noexcept;
+    const DiaryEntry* readEntry(const std::string& id) const noexcept;
+    // CHANGED: Return std::string (ID) instead of pointer.
+    // This is "Handle-based access" and is much safer for vectors.
+    //[[nodiscard]] : if someone ignore return value error then warn them!!
+    [[nodiscard]] std::string createEntry(const std::string& title, const std::string& content);
+    [[nodiscard]] DiaryError updateEntry(const std::string& id, const std::string& title, const std::string& content);
+    [[nodiscard]] DiaryError deleteEntry(const std::string& id);
 
-        // validity checkers
-        bool isValidId(const std::string& id) const noexcept;
+private:
 
-        // helper setters
-        [[nodiscard]] DiaryError setTitle(const std::string& id, const std::string& newTitle) const noexcept;
-        [[nodiscard]] DiaryError setContent(const std::string& id, const std::string& newContent) const noexcept;
-        
-        // helper getters
-        const std::string* getTitle(const std::string& id) const noexcept;
-        const std::string* getContent(const std::string& id) const noexcept;
+    // std::vector<DiaryEntrySummary> summaryCache;  still in disccuesion can sigthly increase Ram cosuption while minimizing cpu overhead
+    std::vector<DiaryEntry> entries;
+
+    // validity checkers
+    bool isValidId(const std::string& id) const noexcept;
+
+    // helper setters
+    [[nodiscard]] DiaryError setTitle(const std::string& id, const std::string& newTitle) noexcept;
+    [[nodiscard]] DiaryError setContent(const std::string& id, const std::string& newContent) noexcept;
+
+    // helper getters
+    const std::string* getTitle(const std::string& id) const noexcept;
+    const std::string* getContent(const std::string& id) const noexcept;
+
+    // Helper to find non-const entry internally
+    DiaryEntry* findEntryById(const std::string& id);
 };
 
 #endif
+
+
+/*
+┌───────────────┐
+│ DiaryManager  │   owns entries
+│               │
+│  vector<DiaryEntry>
+│               │
+│  ├── readEntry(id)        -> full entry
+│  ├── create/update/delete
+│  └── readEntrySummaries() -> UI list
+└───────────────┘
+
+*/
