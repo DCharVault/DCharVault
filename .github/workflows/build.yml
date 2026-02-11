@@ -74,7 +74,7 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
-  # ============================================================================
+# ============================================================================
   # JOB 3: ANDROID (ARM64) - Qt 6.6.3 LTS
   # ============================================================================
   build-android:
@@ -96,23 +96,37 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential tar curl zip unzip
 
-    # 1. Install Libsodium (Android) via VCPKG
+    # 1. FIX: Install Libsodium correctly and align paths for CMake
     - name: Install Libsodium (VCPKG)
       run: |
+        # A. Bootstrap Vcpkg
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install --triplet arm64-android
-        mv vcpkg_installed/arm64-android vcpkg_installed/arm64-v8a
-        echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/vcpkg_installed" >> $GITHUB_ENV
 
-    # 2. INSTALL HOST QT (Linux Tools)
+        # B. Install Libsodium (You missed the package name here!)
+        ./vcpkg/vcpkg install libsodium --triplet arm64-android
+
+        # C. Re-arrange files to match your CMakeLists.txt structure
+        # CMake expects: ${ROOT}/${ABI}/include
+        # Vcpkg gives:   vcpkg/installed/arm64-android/include
+        
+        mkdir -p libs/arm64-v8a
+        cp -r vcpkg/installed/arm64-android/include libs/arm64-v8a/
+        mkdir -p libs/arm64-v8a/lib
+        
+        # Copy the static library
+        cp vcpkg/installed/arm64-android/lib/libsodium.a libs/arm64-v8a/lib/
+        
+        # Set the ENV variable to the parent 'libs' folder
+        echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/libs" >> $GITHUB_ENV
+
+    # 2. INSTALL HOST QT (Linux Tools needed to build Android)
     - name: Install Qt Host
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'linux'
         target: 'desktop'
-        # Default arch (gcc_64) auto-selected
         cache: true
 
     # 3. INSTALL TARGET QT (Android Libs)
@@ -133,7 +147,7 @@ jobs:
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
         
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
-        -DQT_ANDROID_BUILD_ALL_ABIS=ON \
+        -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
         -DANDROID_ABI=arm64-v8a \
         -DQT_HOST_PATH=$QT_HOST_PATH
 
