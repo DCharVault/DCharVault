@@ -73,8 +73,8 @@ jobs:
 
     - name: Build
       run: cmake --build build --config Release
-
-# ============================================================================
+      
+  # ============================================================================
   # JOB 3: ANDROID (ARM64) - Qt 6.6.3 LTS
   # ============================================================================
   build-android:
@@ -96,19 +96,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential tar curl zip unzip
 
-    # 1. FIX: Install Libsodium correctly and align paths for CMake
+    # 1. FIX: Added '--classic' to ignore vcpkg.json and force manual install
     - name: Install Libsodium (VCPKG)
       run: |
         # A. Bootstrap Vcpkg
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
 
-        # B. Install Libsodium (You missed the package name here!)
-        ./vcpkg/vcpkg install libsodium --triplet arm64-android
+        # B. Install Libsodium (Use --classic to bypass Manifest Mode error)
+        ./vcpkg/vcpkg install libsodium --triplet arm64-android --classic
 
         # C. Re-arrange files to match your CMakeLists.txt structure
-        # CMake expects: ${ROOT}/${ABI}/include
-        # Vcpkg gives:   vcpkg/installed/arm64-android/include
+        # Classic mode installs to: vcpkg/installed/arm64-android
         
         mkdir -p libs/arm64-v8a
         cp -r vcpkg/installed/arm64-android/include libs/arm64-v8a/
