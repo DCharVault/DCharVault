@@ -154,3 +154,12 @@ jobs:
     # 5. Build the APK
     - name: Build APK
       run: cmake --build build --config Release
+
+      # 6. UPLOAD ARTIFACT (Downloadable APK)
+    - name: Upload Android APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: DCharVault-Android
+        path: build/**/*.apk  # The '**' finds the APK even if it's buried in subfolders
+        if-no-files-found: error
+        retention-days: 1     # Deletes after 24 hours to save storage
