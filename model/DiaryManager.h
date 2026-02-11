@@ -43,7 +43,7 @@ struct DiaryEntrySummary {
 
 class DiaryManager{
 public:
-    const std::vector<DiaryEntrySummary>& readEntrySummaries() const noexcept; // may use this for reading entries
+    std::vector<DiaryEntrySummary> readEntrySummaries() const;
     // const std::vector<DiaryEntry>& readEntries() const noexcept;
     const DiaryEntry* readEntry(const std::string& id) const noexcept;
     // CHANGED: Return std::string (ID) instead of pointer.

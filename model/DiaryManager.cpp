@@ -49,7 +49,7 @@ std::string DiaryManager::createEntry(const std::string &title, const std::strin
 // 2. Read Summaries
 // GOAL: Provide a lightweight list for the UI (ListView).
 // The UI doesn't need the full content (which could be huge), just the title/date.
-const std::vector<DiaryEntrySummary>& DiaryManager::readEntrySummaries() const noexcept {
+std::vector<DiaryEntrySummary> DiaryManager::readEntrySummaries() const{
     std::vector<DiaryEntrySummary> summaries;
 
     // PERFORMANCE: Reserve Memory
