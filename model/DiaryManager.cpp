@@ -11,15 +11,68 @@
 // PERFORMANCE: This is a linear search O(N). For < 1000 entries, this is faster
 // than a HashMap due to CPU cache locality (vectors are contiguous in RAM).
 DiaryEntry* DiaryManager::findEntryById(const std::string& id) {
-    for (auto& entry : entries) {
-        if (entry.id == id) return &entry;
+    // FIX: Renamed 'entry' to 'it' so it matches 'it->second' below
+    auto it = idToIndex.find(id);
+    if(it == idToIndex.end()){
+        return nullptr;
     }
-    return nullptr;
+    // directly return the pointer from the vector using the stored index
+    // it->second is the index. entries[index] is the object. & takes the address.
+    return &entries[it->second];
+    /*
+    If you call readEntry("C99"):
+    Map Lookup: The map says "C99 is at index 2". (it->second is 2).
+    Vector Access: We look at entries[2].
+    Return Pointer: We return the address (&) of that entry so the user can read it.
+    */
 }
+
+// FIX: Removed DiaryManager::DiaryManager() because it is marked '= default' in the header.
+// Redefining it here causes a compile error.
+
 
 // ==================================================================================
 // CORE FEATURES
 // ==================================================================================
+
+
+[[nodiscard]] DiaryError DiaryManager::openDiary(const std::string& path, const std::string& password){
+
+    // 1. If a diary is already open, clear it securely
+    if (!entries.empty()) {
+        entries.clear();
+        entries.shrink_to_fit(); // Release RAM back to Android/Windows
+        idToIndex.clear();
+    }
+
+    // perform actual disk(database SQLite) I/O (pseudo code)
+    // if (!diary.exists()) return DiaryError::DeserializationFailed;
+
+
+    // 2. Database logic
+    // We attempt to open the SQLite file at 'path' using 'password'
+    // if (db.open(path, password) != SUCCESS) return DiaryError::DecryptionFailed;
+
+    // 3. Fill the vector from DB
+    // ...
+
+    return DiaryManager::loadFromDisk();
+}
+
+
+[[nodiscard]] DiaryError DiaryManager::loadFromDisk(){
+    // PRE-RESERVE memory (Optimization!)
+    // This prevents the map from "re-shuffling" while you fill it.
+    idToIndex.reserve(entries.size());
+
+    for(size_t i = 0; i<entries.size(); ++i){
+        idToIndex[entries[i].id] = i;
+    }
+
+    return DiaryError::None;
+}
+
+
 
 // 1. Create Entry
 // GOAL: Add a new entry to the RAM database safely and efficiently.
@@ -38,6 +91,10 @@ std::string DiaryManager::createEntry(const std::string &title, const std::strin
     entry.id = "UUID_PLACEHOLDER";
     entry.createdAt = 1000;        // Placeholder timestamp
     entry.updatedAt = 1000;
+
+
+    // making sure that idToIndex can update itself to newely created entry
+    idToIndex[entry.id] = entries.size()-1;
 
     // SAFETY CRITICAL: Return the ID, not the Pointer!
     // If we returned '&entry', and the vector later resized (grew), that pointer
@@ -70,16 +127,11 @@ std::vector<DiaryEntrySummary> DiaryManager::readEntrySummaries() const{
 // 3. Read Single Entry
 // GOAL: Get the full data for the Editor.
 const DiaryEntry* DiaryManager::readEntry(const std::string& id) const noexcept {
-    // REUSE: Use our helper to find the entry.
-    // We explicitly cast away const-ness internally, but return a const pointer
-    // so the user cannot accidentally modify the entry directly.
-    // (In this specific implementation, we just duplicate the loop for const-correctness simplicity)
-    for (const auto& entry : entries) {
-        if (entry.id == id) {
-            return &entry;
-        }
-    }
-    return nullptr;
+
+    auto it = idToIndex.find(id);
+    // FIX: Compare to idToIndex.end(), NOT 'entires.end()' (which was a typo and wrong type)
+    if(it == idToIndex.end()) return nullptr; 
+    return &entries[it->second];
 }
 
 // 4. Update Entry
@@ -106,22 +158,30 @@ DiaryError DiaryManager::updateEntry(const std::string& id, const std::string& t
 // GOAL: Remove an entry and ensuring the data is truly gone (Sanitization).
 DiaryError DiaryManager::deleteEntry(const std::string &id) {
     if (id.empty()) return DiaryError::EmptyId;
+    auto it = idToIndex.find(id);
+    if (it == idToIndex.end()) return DiaryError::EntryNotFound;
 
-    for (auto it = entries.begin(); it != entries.end(); ++it) {
-        if (it->id == id) {
-            // SECURITY: "Manual Zeroing" (The Scrubbing)
-            // Problem: When you delete a string, the OS marks the memory as "free"
-            // but does NOT wipe the data. A hacker dumping RAM could see the deleted diary text.
+    size_t indexToDelete = it->second;
+    size_t lastIndex = entries.size() - 1;
 
-            // Solution: We force-overwrite the memory with zeros before deletion.
-            // 'volatile' tells the compiler: "Do not optimize this away, actually do it!"
-            volatile char* p = (volatile char*)it->content.data();
-            std::fill(p, p + it->content.size(), 0);
+    volatile char* p = (volatile char*)entries[indexToDelete].content.data();
+    std::fill(p, p + entries[indexToDelete].content.size(), 0);
 
-            // CLEANUP: Now remove the empty shell from the vector.
-            entries.erase(it);
-            return DiaryError::None;
-        }
+    // 1. Swap with the last element (unless it IS the last element)
+    if (indexToDelete != lastIndex) {
+        // Move the last element into the gap
+        entries[indexToDelete] = std::move(entries.back());
+        
+        // IMPORTANT: Update the Map for the element that just moved!
+        idToIndex[entries[indexToDelete].id] = indexToDelete;
     }
-    return DiaryError::EntryNotFound;
+
+
+    // 2. Remove the now-duplicate last element
+    entries.pop_back();
+    
+    // 3. Remove the deleted ID from the map
+    idToIndex.erase(id);
+
+    return DiaryError::None;
 }

@@ -3,6 +3,7 @@
 
 #include<vector>
 #include<string>
+#include <unordered_map>
 #include"DiaryEntry.h"
 
 enum class DiaryError{
@@ -43,6 +44,12 @@ struct DiaryEntrySummary {
 
 class DiaryManager{
 public:
+    // app starts, but no diary is "open" yet
+    DiaryManager() = default;
+    
+    // The worker function: Called later when the user interacts with the UI.
+    [[nodiscard]] DiaryError openDiary(const std::string& path, const std::string& password);
+
     std::vector<DiaryEntrySummary> readEntrySummaries() const;
     // const std::vector<DiaryEntry>& readEntries() const noexcept;
     const DiaryEntry* readEntry(const std::string& id) const noexcept;
@@ -54,11 +61,15 @@ public:
     [[nodiscard]] DiaryError deleteEntry(const std::string& id);
 
 private:
+    // constructors functions
+    [[nodiscard]] DiaryError loadFromDisk();
 
     // std::vector<DiaryEntrySummary> summaryCache;  still in disccuesion can sigthly increase Ram cosuption while minimizing cpu overhead
     std::vector<DiaryEntry> entries;
+    std::unordered_map<std::string, size_t> idToIndex;
 
     // validity checkers
+    bool isLoadedFromDisk() const noexcept;
     bool isValidId(const std::string& id) const noexcept;
 
     // helper setters
