@@ -11,8 +11,9 @@
 // PERFORMANCE: This is a linear search O(N). For < 1000 entries, this is faster
 // than a HashMap due to CPU cache locality (vectors are contiguous in RAM).
 DiaryEntry* DiaryManager::findEntryById(const std::string& id) {
-    auto entry = idToIndex.find(id);
-    if(entry == idToIndex.end()){
+    // FIX: Renamed 'entry' to 'it' so it matches 'it->second' below
+    auto it = idToIndex.find(id);
+    if(it == idToIndex.end()){
         return nullptr;
     }
     // directly return the pointer from the vector using the stored index
@@ -26,11 +27,8 @@ DiaryEntry* DiaryManager::findEntryById(const std::string& id) {
     */
 }
 
-
-
-DiaryManager::DiaryManager(){
-    
-}
+// FIX: Removed DiaryManager::DiaryManager() because it is marked '= default' in the header.
+// Redefining it here causes a compile error.
 
 
 // ==================================================================================
@@ -131,7 +129,8 @@ std::vector<DiaryEntrySummary> DiaryManager::readEntrySummaries() const{
 const DiaryEntry* DiaryManager::readEntry(const std::string& id) const noexcept {
 
     auto it = idToIndex.find(id);
-    if(it == entires.end()) return nullptr; 
+    // FIX: Compare to idToIndex.end(), NOT 'entires.end()' (which was a typo and wrong type)
+    if(it == idToIndex.end()) return nullptr; 
     return &entries[it->second];
 }
 
