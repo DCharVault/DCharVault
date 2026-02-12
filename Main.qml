@@ -1,24 +1,26 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Window
 
-Window {
-    width: 640
-    height: 480
+// We import the folder where EditorView.qml lives
+import "ui"
+
+ApplicationWindow {
+    id: window
     visible: true
-    title: qsTr("DCharVault")
-    color: "#1e1e1e"
+    width: 800
+    height: 900
+    title: "AegisJournal - Editor Test"
 
-    StackView{
-        id: stack
+    // Set a nice background color so the "paper" stands out
+    color: "#F2F2F2"
+
+    // Load ONLY the EditorView
+    EditorView {
         anchors.fill: parent
+        anchors.margins: 0 // Edges touch the window
 
-        // start with home view
-        initialItem: HomeView{
-            // handle the signal from HomeView
-            onCreateClicked:{
-                stack.push("ui/EditorView.qml")
-            }
-        }
+        // Test Data: Pre-fill some text to see if it looks right
+        entryTitle: "Testing the Editor"
+        entryContent: "<b>Hello!</b><br>This is a test of the <i>rich text</i> editor.<br><br>Type here to test the scrolling..."
     }
 }
