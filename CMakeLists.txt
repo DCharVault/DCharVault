@@ -130,3 +130,5 @@ install(TARGETS appDCharVault
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+qt_finalize_executable(appDCharVault)
