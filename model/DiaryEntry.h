@@ -11,6 +11,7 @@ struct DiaryEntry{
     std::string id;
     std::string title;
     std::string content;
+    DiaryEntry(const std::string& title, const std::string& content) : title{title}, content{content}{};
 };
 
 
