@@ -149,6 +149,8 @@ jobs:
         -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
         -DANDROID_ABI=arm64-v8a \
         -DANDROID_PLATFORM=android-28 \
+        -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
+        -DQT_ANDROID_TARGET_SDK_VERSION=33 \
         -DQT_HOST_PATH=$QT_HOST_PATH
 
     # 5. Build the APK
