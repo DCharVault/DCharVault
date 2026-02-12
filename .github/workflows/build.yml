@@ -1,10 +1,10 @@
 name: Build DCharVault
 
 on:
-  workflow_dispatch: # Manual button
+  workflow_dispatch:
   push:
     branches: [ "main" ]
-    paths: # Only run on code changes to save minutes
+    paths:
       - '**.cpp'
       - '**.h'
       - '**.hpp'
@@ -13,15 +13,15 @@ on:
       - '.github/workflows/**'
 
 jobs:
+
   # ============================================================================
-  # JOB 1: LINUX (Ubuntu) - Qt 6.6.3 LTS
+  # JOB 1: LINUX
   # ============================================================================
   build-linux:
     name: 🐧 Linux (Ubuntu)
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Install System Dependencies
       run: |
@@ -42,16 +42,16 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
+
   # ============================================================================
-  # JOB 2: WINDOWS (MSVC) - Qt 6.6.3 LTS
+  # JOB 2: WINDOWS
   # ============================================================================
   build-windows:
     name: 🪟 Windows (MSVC)
     runs-on: windows-latest
     
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Install Dependencies (VCPKG)
       run: |
@@ -72,17 +72,17 @@ jobs:
 
     - name: Build
       run: cmake --build build --config Release
-      
+
+
   # ============================================================================
-  # JOB 3: ANDROID (ARM64) - Qt 6.6.3 LTS
+  # JOB 3: ANDROID (FIXED)
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Setup Java JDK
       uses: actions/setup-java@v4
@@ -95,30 +95,21 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential tar curl zip unzip
 
-    # 1. FIX: Added '--classic' to ignore vcpkg.json and force manual install
+    # Install libsodium
     - name: Install Libsodium (VCPKG)
       run: |
-        # A. Bootstrap Vcpkg
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
-
-        # B. Install Libsodium (Use --classic to bypass Manifest Mode error)
         ./vcpkg/vcpkg install libsodium --triplet arm64-android --classic
 
-        # C. Re-arrange files to match your CMakeLists.txt structure
-        # Classic mode installs to: vcpkg/installed/arm64-android
-        
         mkdir -p libs/arm64-v8a
         cp -r vcpkg/installed/arm64-android/include libs/arm64-v8a/
         mkdir -p libs/arm64-v8a/lib
-        
-        # Copy the static library
         cp vcpkg/installed/arm64-android/lib/libsodium.a libs/arm64-v8a/lib/
-        
-        # Set the ENV variable to the parent 'libs' folder
+
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/libs" >> $GITHUB_ENV
 
-    # 2. INSTALL HOST QT (Linux Tools needed to build Android)
+    # Install Qt Host Tools
     - name: Install Qt Host
       uses: jurplel/install-qt-action@v3
       with:
@@ -127,7 +118,7 @@ jobs:
         target: 'desktop'
         cache: true
 
-    # 3. INSTALL TARGET QT (Android Libs)
+    # Install Qt Android
     - name: Install Qt Target
       uses: jurplel/install-qt-action@v3
       with:
@@ -137,21 +128,26 @@ jobs:
         arch: 'android_arm64_v8a'
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
-        
-    # 3.5 NUCLEAR FIX: Delete the broken Android 36 SDK
-    - name: Nuke Android 36
+
+
+    # ✅ CRITICAL FIX — REMOVE BROKEN SDK 35
+    - name: Force Supported Android SDK
       run: |
-        echo "Deleting incompatible Android 36 platform..."
-        sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-36*
-        sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/36*
-        echo "Android 36 deleted. Build will now fall back to Stable 34/33."
-    
-    # 4. Configure CMake
+        echo "Removing unsupported Android SDKs..."
+
+        sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-35*
+        sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/35*
+        sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-34-ext*
+
+        echo "Remaining SDKs:"
+        ls ${ANDROID_SDK_ROOT}/platforms
+
+
+    # Configure build
     - name: Configure CMake
       run: |
-        # Point to the 6.6.3 Host Tools
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
-        
+
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
         -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
         -DANDROID_ABI=arm64-v8a \
@@ -160,15 +156,15 @@ jobs:
         -DQT_ANDROID_TARGET_SDK_VERSION=33 \
         -DQT_HOST_PATH=$QT_HOST_PATH
 
-    # 5. Build the APK
+    # Build APK
     - name: Build APK
       run: cmake --build build --config Release
 
-    # 6. UPLOAD ARTIFACT (Downloadable APK)
+    # Upload artifact
     - name: Upload Android APK
       uses: actions/upload-artifact@v4
       with:
         name: DCharVault-Android
-        path: build/**/*.apk  # The '**' finds the APK even if it's buried in subfolders
+        path: build/**/*.apk
         if-no-files-found: error
-        retention-days: 1     # Deletes after 24 hours to save storage
+        retention-days: 1
