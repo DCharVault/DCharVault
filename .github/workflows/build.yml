@@ -33,7 +33,6 @@ jobs:
       with:
         version: '6.6.3'
         host: 'linux'
-        # Default architecture (gcc_64) is automatically selected
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
@@ -64,7 +63,7 @@ jobs:
       with:
         version: '6.6.3'
         host: 'windows'
-        arch: 'win64_msvc2019_64' # The standard kit for Qt 6.6
+        arch: 'win64_msvc2019_64'
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
@@ -138,7 +137,15 @@ jobs:
         arch: 'android_arm64_v8a'
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
-
+        
+    # 3.5 NUCLEAR FIX: Delete the broken Android 36 SDK
+    - name: Nuke Android 36
+      run: |
+        echo "Deleting incompatible Android 36 platform..."
+        sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-36*
+        sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/36*
+        echo "Android 36 deleted. Build will now fall back to Stable 34/33."
+    
     # 4. Configure CMake
     - name: Configure CMake
       run: |
@@ -157,7 +164,7 @@ jobs:
     - name: Build APK
       run: cmake --build build --config Release
 
-      # 6. UPLOAD ARTIFACT (Downloadable APK)
+    # 6. UPLOAD ARTIFACT (Downloadable APK)
     - name: Upload Android APK
       uses: actions/upload-artifact@v4
       with:
