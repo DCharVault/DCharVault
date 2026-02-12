@@ -14,85 +14,73 @@ on:
 
 jobs:
 
-# ============================================================================
-# JOB 1: WINDOWS BUILD
-# ============================================================================
-  build-windows:
-    name: 🪟 Windows
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.6.3'
-        host: 'windows'
-        target: 'desktop'
-        arch: 'win64_msvc2019_64'
-        cache: true
-
-    - name: Configure
-      run: qt-cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build
-      run: cmake --build build --config Release
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: DCharVault-Windows
-        path: build/Release/*
-        retention-days: 1
-
-
-# ============================================================================
-# JOB 2: LINUX BUILD
-# ============================================================================
+  # ============================================================================
+  # JOB 1: LINUX
+  # ============================================================================
   build-linux:
-    name: 🐧 Linux
+    name: 🐧 Linux (Ubuntu)
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install System Packages
+    - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libgl1-mesa-dev
+        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'linux'
-        target: 'desktop'
+        modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
     - name: Configure
-      run: qt-cmake -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+
+  # ============================================================================
+  # JOB 2: WINDOWS
+  # ============================================================================
+  build-windows:
+    name: 🪟 Windows (MSVC)
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Libsodium
+      run: |
+        vcpkg install --triplet x64-windows
+        echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
       with:
-        name: DCharVault-Linux
-        path: build/*
-        retention-days: 1
+        version: '6.6.3'
+        host: 'windows'
+        arch: 'win64_msvc2019_64'
+        modules: 'qt5compat qtshadertools qtquick3d'
+        cache: true
+
+    - name: Configure
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+
+    - name: Build
+      run: cmake --build build --config Release
 
 
-# ============================================================================
-# JOB 3: ANDROID BUILD (FULLY FIXED)
-# ============================================================================
+  # ============================================================================
+  # JOB 3: ANDROID (FIXED)
+  # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
     runs-on: ubuntu-latest
-    
-    env:
-      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
 
     steps:
     - uses: actions/checkout@v4
@@ -100,44 +88,16 @@ jobs:
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
-        distribution: temurin
+        distribution: 'temurin'
         java-version: '17'
 
-    - name: Install System Tools
+    - name: Install Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential unzip wget
+        sudo apt-get install -y build-essential tar curl zip unzip
 
-    # Prepare SDK folder
-    - name: Prepare Android SDK
-      run: mkdir -p $ANDROID_SDK_ROOT
-
-    # Install cmdline tools
-    - name: Install Android CLI Tools
-      run: |
-        cd $ANDROID_SDK_ROOT
-        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
-        unzip tools.zip
-        rm tools.zip
-
-        mkdir -p cmdline-tools/latest
-        mv cmdline-tools/* cmdline-tools/latest/ || true
-
-        echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-
-    # Install SDK 33 ONLY (fixes resource linking crash)
-    - name: Install Android SDK
-      run: |
-        yes | sdkmanager --licenses
-
-        sdkmanager \
-          "platforms;android-33" \
-          "build-tools;33.0.2" \
-          "platform-tools" \
-          "ndk;27.3.13750724"
-
-    # Install libsodium
-    - name: Install Libsodium
+    # Install Libsodium
+    - name: Install Libsodium (VCPKG)
       run: |
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
@@ -160,7 +120,7 @@ jobs:
         cache: true
 
     # Install Qt Android
-    - name: Install Qt Android
+    - name: Install Qt Target
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
@@ -170,25 +130,32 @@ jobs:
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
-    # Configure CMake
+    # 🔥 FIX: Remove broken Android 36 SDK
+    - name: Remove Android 36 (Critical Fix)
+      run: |
+        echo "Cleaning incompatible SDK 36..."
+        sudo rm -rf /usr/local/lib/android/sdk/platforms/android-36*
+        sudo rm -rf /usr/local/lib/android/sdk/build-tools/36*
+
+    # Configure
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
 
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
-          -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
-          -DANDROID_ABI=arm64-v8a \
-          -DANDROID_PLATFORM=android-28 \
-          -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
-          -DQT_ANDROID_TARGET_SDK_VERSION=33 \
-          -DQT_HOST_PATH=$QT_HOST_PATH
+        -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
+        -DANDROID_ABI=arm64-v8a \
+        -DANDROID_PLATFORM=android-28 \
+        -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
+        -DQT_ANDROID_TARGET_SDK_VERSION=33 \
+        -DQT_HOST_PATH=$QT_HOST_PATH
 
     # Build APK
     - name: Build APK
       run: cmake --build build --config Release
 
-    # Upload artifact
-    - name: Upload Android APK
+    # Upload APK
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: DCharVault-Android
