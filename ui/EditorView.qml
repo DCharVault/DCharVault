@@ -2,17 +2,27 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
+import QtQuick.Dialogs
 
-// CHANGE THIS FROM 'Item' TO 'Page'
 Page {
     id: root
 
-    signal menuClicked()
+    function refreshCursor() {
+        let start = editorArea.selectionStart
+        let end = editorArea.selectionEnd
+        editorArea.deselect()
+        editorArea.select(start, end)
+        editorArea.forceActiveFocus()
+    }
+
+    signal menuClicked
 
     // 1 settings
     // readonly property bool isMobile: Qt.platform.os === "android"
     // for testing switched to android view
-    readonly property bool isMobile: true
+    readonly property bool isMobile: false
+
+    property int colorMode: 0 // 0 == text color, 1== highlight color
 
 
     // --- API ---
@@ -20,76 +30,243 @@ Page {
     property alias entryContent: editorArea.text
     property alias readOnly: editorArea.readOnly
 
+    Action {
+        id: saveAction
+        text: "Save"
+        shortcut: StandardKey.Save // ctrl+S
+        enabled: editorArea.textDocument.modified
+        onTriggered: console.log(
+                         "Save Action Triggered! Currently in Development!!")
+    }
+    Action {
+        id: reloadAction
+        text: "Reload From Disk"
+        shortcut: "Ctrl+Shift+R"
+        onTriggered: console.log("Reload Triggered! Currently in Development!!")
+    }
+    Action {
+        id: undoAction
+        text: "Undo"
+        shortcut: StandardKey.Undo // ctrl+Z
+        enabled: editorArea.canUndo
+        onTriggered: editorArea.undo()
+    }
+    Action {
+        id: redoAction
+        text: "Redo"
+        shortcut: StandardKey.Redo // ctrl+Y or ctrl+shift+Z
+        enabled: editorArea.canRedo
+        onTriggered: editorArea.redo()
+    }
+    Action {
+        id: cutAction
+        text: "Cut"
+        shortcut: StandardKey.Cut // ctrl+X
+        enabled: editorArea.selectedText.length > 0
+        onTriggered: editorArea.cut()
+    }
+    Action {
+        id: copyAction
+        text: "Copy"
+        shortcut: StandardKey.Copy // ctrl+C
+        enabled: editorArea.selectedText.length > 0
+        onTriggered: editorArea.copy()
+    }
+    Action {
+        id: pasteAction
+        text: "Paste"
+        shortcut: StandardKey.Paste // ctrl+V
+        enabled: true
+        onTriggered: editorArea.paste()
+    }
+
+    // Alignment TRIO's
+    ActionGroup {
+        id: alignnmentGroup
+    }
+    Action {
+        id: alignLeftAction
+        text: "Align Left"
+        shortcut: "Ctrl+L"
+        checkable: true
+        ActionGroup.group: alignnmentGroup
+        checked: editorArea.cursorSelection.alignment === Qt.AlignLeft
+        onTriggered: {
+            editorArea.cursorSelection.alignment = Qt.AlignLeft
+            root.refreshCursor()
+        }
+    }
+    Action {
+        id: alignCentreAction
+        text: "Align Centre"
+        shortcut: "Ctrl+E"
+        checkable: true
+        ActionGroup.group: alignnmentGroup
+        checked: editorArea.cursorSelection.alignment === Qt.AlignCenter
+        onTriggered: {
+            editorArea.cursorSelection.alignment = Qt.AlignCenter
+            root.refreshCursor()
+        }
+    }
+    Action {
+        id: alignRightAction
+        text: "Align Right"
+        shortcut: "Ctrl+R"
+        checkable: true
+        ActionGroup.group: alignnmentGroup
+        checked: editorArea.cursorSelection.alignment === Qt.AlignRight
+        onTriggered: {
+            editorArea.cursorSelection.alignment = Qt.AlignRight
+            root.refreshCursor()
+        }
+    }
+
+    Action {
+        id: boldAction
+        text: "Bold"
+        shortcut: StandardKey.Bold // handles ctrl+B auto
+        checkable: true
+        checked: editorArea.cursorSelection.font.bold
+        onTriggered: editorArea.cursorSelection.font.bold = checked
+    }
+    Action {
+        id: italicAction
+        text: "Italic"
+        shortcut: StandardKey.Italic // handles ctrl+I auto
+        checkable: true
+        checked: editorArea.cursorSelection.font.italic
+        onTriggered: editorArea.cursorSelection.font.italic = checked
+    }
+    Action {
+        id: underlineAction
+        text: "Underline"
+        shortcut: StandardKey.Underline // handle ctrl+U auto
+        checkable: true
+        checked: editorArea.cursorSelection.font.underline
+        onTriggered: editorArea.cursorSelection.font.underline = checked
+    }
+
+    ColorDialog{
+        id: colorPickerDialog
+        title: root.colorMode === 0 ? "Select Text Color" : "Select Highlighter Color"
+
+        selectedColor: root.colorMode === 0 ? editorArea.cursorSelection.color : "#FFFF00" // sync start color with current text
+        onAccepted: {
+            if(colorMode == 0){
+                editorArea.cursorSelection.color = selectedColor
+            }
+            else{
+                editorArea.cursorSelection.font.backgroundColor = selectedColor
+            }
+            editorArea.forceActiveFocus()// keep keyboard open
+        }
+    }
+
     // 2 Toolbar logic
     Component {
         id: toolbarComponent
         EditorToolbar {
+            id: toolbar
             isMobile: root.isMobile
             onMenuClicked: root.menuClicked()
-            // Handle signal from toolbar
-            onBoldClicked: console.log("Bold requested")
-            onItalicClicked: console.log("Italic requested")
-            onUnderlineClicked: console.log("Underline Clicked")
+            // Use to trigger action direct
+            onBoldClicked: boldAction.trigger()
+            onItalicClicked: italicAction.trigger()
+            onUnderlineClicked: underlineAction.trigger()
+
+            onFontSizeSelected: size => {
+                                    // use standard pt size here (12pt not pixel size)
+                                    editorArea.cursorSelection.font.pointSize = size
+                                    editorArea.forceActiveFocus()
+                                }
+
+            onColorClicked: {
+                root.colorMode = 0 // mode text color
+                colorPickerDialog.open()
+            }
+            onHighlighterClicked: {
+                root.colorMode = 1 // mode highlighter color
+                colorPickerDialog.open()
+            }
+
             onDoneClicked: Qt.inputMethod.hide()
         }
     }
 
-    // 3 Dynamic Placement
-    // Desktop: Toolbar goes in header
     header: Loader {
+        id: toolbarLoader
         sourceComponent: toolbarComponent
-        active: !root.isMobile
-        visible: active
-    }
-
-    // Mobile: Toolbar goes in footer
-    footer: Loader {
-        sourceComponent: toolbarComponent
-        active: root.isMobile
-        visible: active
+        visible: true
     }
 
     // The editor content
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 15
+        anchors.margins: 10
         spacing: 10
 
-        // Divider
-        Rectangle { Layout.fillWidth: true; height: 1; color: "#DDDDDD" }
+        ColumnLayout {
 
-        // --- HEADER ---
-        TextField {
-            id: titleField
             Layout.fillWidth: true
-            font.pixelSize: 24
-            font.bold: true
-            background: null
-            selectByMouse: true
+            Layout.preferredHeight: implicitHeight
+            spacing: 4
+            // --- HEADER ---
+            TextField {
+                id: titleField
+                Layout.fillWidth: true
+                font.pixelSize: 24
+                font.bold: true
+                background: null
+                selectByMouse: true
+                padding: 0
+                readonly property real textWidth: contentWidth
+                color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
+            }
+            // date label
+            Text {
+                id: dateLabel
+                text: Qt.formatDateTime(new Date(), "dddd, MMMM d • h:mm AP")
+                color: "#C4A484"
+                font.pixelSize: 12
+            }
         }
 
-        Text {
-            id: dateLabel
-            text: Qt.formatDateTime(new Date(), "dddd, MMMM d • h:mm AP")
-            color: "#C4A484"
-            font.pixelSize: 12
-        }
-
-        // --- EDITOR ---
+        // --- CONTENT EDITOR ---
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
 
             TextArea {
+                topPadding: 10
                 id: editorArea
                 font.pixelSize: 16
                 font.family: "Georgia"
                 wrapMode: Text.Wrap
                 textFormat: TextEdit.RichText
-                selectByMouse: true
+
                 background: null
-                color: "#7B3F00"
+                color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
+
+                // keep selection presistant
+                persistentSelection: true
+                selectByMouse: true
+
+                // when user moves cursor, update Tool box acc to it
+                onCursorPositionChanged: {
+                    // get size logic
+                    let size = editorArea.cursorSelection.font.pointSize
+                    if(size !== undefined && size>0){
+                        toolbarLoader.item.currentFontSize = Math.round(size).toString() // for now(lets only handle int size)
+                    }
+                    else{
+                        toolbarLoader.item.currentFontSize = "12"
+                    }
+
+                    //TODO: get bold italic underline here
+
+                    //TODO: get color and background color here
+                }
             }
         }
     }

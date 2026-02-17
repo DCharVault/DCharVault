@@ -6,6 +6,11 @@ import "ui"
 
 ApplicationWindow {
     id: window
+
+    property bool isDark: true
+
+
+
     visible: true
     width: 800
     height: 700
@@ -13,7 +18,7 @@ ApplicationWindow {
 
     // --- GLOBAL STYLE ---
         // This applies to the whole app (Sidebar, Editor, everything)
-        Material.theme: Material.Light
+        Material.theme: isDark ? Material.Dark : Material.Light
         Material.accent: Material.DeepOrange // The color of the "+" button and active fields
         Material.primary: "#FFFFFF"
 
