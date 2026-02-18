@@ -43,184 +43,201 @@ ToolBar {
         // color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
     }
 
-    // 3 Buttons
-    RowLayout {
+    ScrollView {
         anchors.fill: parent
-        spacing: 5
-        anchors.margins: 5
+        // Hide the scrollbar (optional, looks cleaner)
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
-        // 1. MOBILE MENU BUTTON (Hamburger)
-        ToolButton {
-            visible: root.isMobile
-            text: "☰" // Hamburger Icon
-            font.pixelSize: 20
-            onClicked: root.menuClicked() // Emit signal
-        }
+        // Allow horizontal scrolling
+        contentWidth: toolbarLayout.implicitWidth
+        contentHeight: parent.height
+        clip: true // Cut off content that goes outside
+        // 3 Buttons
+        RowLayout {
+            id: toolbarLayout
+            // 3. CRITICAL FIX: Do NOT use anchors.fill: parent
+            // Only anchor top/bottom/left. Let the Right side grow freely.
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
 
-        ToolButton {
-            id: insert
-            text: "+"
-            font.bold: true
-            font.pixelSize: 20
-            Layout.preferredHeight: 50
-        }
+            spacing: 5
+            anchors.margins: 5
 
-        // --- Font Size Stepper ---
-        // --- COMPACT Font Size Stepper (Fixed) ---
-        Rectangle {
-            id: stepperPill
+            // 1. MOBILE MENU BUTTON (Hamburger)
+            ToolButton {
+                visible: root.isMobile
+                text: "☰" // Hamburger Icon
+                font.pixelSize: 20
+                onClicked: root.menuClicked() // Emit signal
+            }
 
-            // Auto-width based on content + a little breathing room
-            Layout.preferredWidth: stepperRow.implicitWidth + 8
-            Layout.preferredHeight: 32 // Standard touch-friendly height
-            Layout.alignment: Qt.AlignVCenter
+            ToolButton {
+                id: insert
+                text: "+"
+                font.bold: true
+                font.pixelSize: 20
+                Layout.preferredHeight: 50
+            }
 
-            radius: 4
-            color: "#F5F5F5"
-            border.color: "#E0E0E0"
+            // --- Font Size Stepper ---
+            // --- COMPACT Font Size Stepper (Fixed) ---
+            Rectangle {
+                id: stepperPill
 
-            RowLayout {
-                id: stepperRow
-                anchors.centerIn: parent
-                spacing: 0
+                // Auto-width based on content + a little breathing room
+                Layout.preferredWidth: stepperRow.implicitWidth + 8
+                Layout.preferredHeight: 32 // Standard touch-friendly height
+                Layout.alignment: Qt.AlignVCenter
 
-                // Decrease Button
-                ToolButton {
-                    text: "−"
-                    Layout.preferredWidth: 32 // Square button
-                    Layout.fillHeight: true
+                radius: 4
+                color: "#F5F5F5"
+                border.color: "#E0E0E0"
 
-                    // Center the text perfectly
-                    contentItem: Text {
-                        text: parent.text
-                        font: parent.font
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        color: "#333"
-                    }
-                    background: null
+                RowLayout {
+                    id: stepperRow
+                    anchors.centerIn: parent
+                    spacing: 0
 
-                    onClicked: {
-                        let newSize = parseInt(sizeField.text) - 2
-                        if (newSize >= 6) {
-                            root.fontSizeSelected(newSize)
-                            sizeField.text = newSize.toString()
+                    // Decrease Button
+                    ToolButton {
+                        text: "−"
+                        Layout.preferredWidth: 32 // Square button
+                        Layout.fillHeight: true
+
+                        // Center the text perfectly
+                        contentItem: Text {
+                            text: parent.text
+                            font: parent.font
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            color: "#333"
+                        }
+                        background: null
+
+                        onClicked: {
+                            let newSize = parseInt(sizeField.text) - 2
+                            if (newSize >= 6) {
+                                root.fontSizeSelected(newSize)
+                                sizeField.text = newSize.toString()
+                            }
                         }
                     }
-                }
 
-                // Vertical Divider (Optional, keeps it clean)
-                Rectangle {
-                    width: 1
-                    height: 16
-                    color: "#DDD"
-                }
-
-                // Input value box
-                TextField {
-                    id: sizeField
-                    text: "12"
-
-                    // Enough width for "88" without cutting off
-                    Layout.preferredWidth: 36
-                    Layout.fillHeight: true
-
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-
-                    // CRITICAL FIXES:
-                    padding: 0
-                    leftPadding: 0
-                    rightPadding: 0
-                    background: null
-                    selectByMouse: true
-
-                    font.pixelSize: 14
-                    color: "#333333"
-
-                    validator: IntValidator {
-                        bottom: 6
-                        top: 88
+                    // Vertical Divider (Optional, keeps it clean)
+                    Rectangle {
+                        width: 1
+                        height: 16
+                        color: "#DDD"
                     }
-                    onAccepted: {
-                        root.fontSizeSelected(parseInt(text))
-                        focus = false
-                    }
-                }
 
-                // Vertical Divider
-                Rectangle {
-                    width: 1
-                    height: 16
-                    color: "#DDD"
-                }
+                    // Input value box
+                    TextField {
+                        id: sizeField
+                        text: "12"
 
-                // Increase Button
-                ToolButton {
-                    text: "+"
-                    Layout.preferredWidth: 32 // Square button
-                    Layout.fillHeight: true
+                        // Enough width for "88" without cutting off
+                        Layout.preferredWidth: 36
+                        Layout.fillHeight: true
 
-                    contentItem: Text {
-                        text: parent.text
-                        font: parent.font
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        color: "#333"
-                    }
-                    background: null
 
-                    onClicked: {
-                        let newSize = parseInt(sizeField.text) + 2
-                        if (newSize <= 72) {
-                            root.fontSizeSelected(newSize)
-                            sizeField.text = newSize.toString()
+                        // CRITICAL FIXES:
+                        padding: 0
+                        leftPadding: 0
+                        rightPadding: 0
+                        background: null
+                        selectByMouse: true
+
+                        font.pixelSize: 14
+                        color: "#333333"
+
+                        validator: IntValidator {
+                            bottom: 6
+                            top: 88
+                        }
+                        onAccepted: {
+                            root.fontSizeSelected(parseInt(text))
+                            focus = false
+                        }
+                    }
+
+                    // Vertical Divider
+                    Rectangle {
+                        width: 1
+                        height: 16
+                        color: "#DDD"
+                    }
+
+                    // Increase Button
+                    ToolButton {
+                        text: "+"
+                        Layout.preferredWidth: 32 // Square button
+                        Layout.fillHeight: true
+
+                        contentItem: Text {
+                            text: parent.text
+                            font: parent.font
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            color: "#333"
+                        }
+                        background: null
+
+                        onClicked: {
+                            let newSize = parseInt(sizeField.text) + 2
+                            if (newSize <= 72) {
+                                root.fontSizeSelected(newSize)
+                                sizeField.text = newSize.toString()
+                            }
                         }
                     }
                 }
             }
-        }
 
-        ToolButton {
-            text: "<b>B</b>"
-            checkable: root.isBold
-            checked: root.isBold
-            onClicked: root.boldClicked()
-        }
-        ToolButton {
-            text: "<i>I</i>"
-            checkable: root.isItalic
-            checked: root.isItalic
-            onClicked: root.italicClicked()
-        }
-        ToolButton {
-            text: "<u>U</u>"
-            checkable: root.isUnderline
-            checked: root.isUnderline
-            onClicked: root.underlineClicked()
-        }
-        ToolSeparator {}
+            ToolButton {
+                text: "<b>B</b>"
+                checkable: root.isBold
+                checked: root.isBold
+                onClicked: root.boldClicked()
+            }
+            ToolButton {
+                text: "<i>I</i>"
+                checkable: root.isItalic
+                checked: root.isItalic
+                onClicked: root.italicClicked()
+            }
+            ToolButton {
+                text: "<u>U</u>"
+                checkable: root.isUnderline
+                checked: root.isUnderline
+                onClicked: root.underlineClicked()
+            }
+            ToolSeparator {}
 
-        // Group 3: Colors (The new request)
-        ToolButton {
-            text: "A"
-            font.bold: true
-            palette.buttonText: "red" // Visual clue
-            onClicked: root.colorClicked()
-            // To make this real, we'd open a ColorDialog here
-        }
+            // Group 3: Colors (The new request)
+            ToolButton {
+                text: "A"
+                font.bold: true
+                palette.buttonText: "red" // Visual clue
+                onClicked: root.colorClicked()
+                // To make this real, we'd open a ColorDialog here
+            }
 
-        ToolButton {
-            text: "🖊️" // Highlighter
-            palette.buttonText: "#FFA500"
-            font.pixelSize: 16
-            onClicked: root.highlighterClicked()
-        }
+            ToolButton {
+                text: "🖊️" // Highlighter
+                palette.buttonText: "#FFA500"
+                font.pixelSize: 16
+                onClicked: root.highlighterClicked()
+            }
 
-        // spacer pushes next items to right
-        // "Done" Button (Only for Mobile)
-        Item {
-            Layout.fillWidth: true
+            // spacer pushes next items to right
+            // "Done" Button (Only for Mobile)
+            Item {
+                Layout.fillWidth: true
+            }
         }
     }
 }

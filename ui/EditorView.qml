@@ -166,18 +166,18 @@ Page {
         isMobile: root.isMobile
         onMenuClicked: root.menuClicked()
 
-        //toolbar update
+        // Sync Toolbar State
         isBold: boldAction.checked
         isItalic: italicAction.checked
         isUnderline: underlineAction.checked
 
-        // Use to trigger action direct
+        // Trigger Actions
         onBoldClicked: boldAction.trigger()
         onItalicClicked: italicAction.trigger()
         onUnderlineClicked: underlineAction.trigger()
 
         onFontSizeSelected: size => {
-                                // use standard pt size here (12pt not pixel size)
+                                // RichText handles point sizes natively and reliably
                                 editorArea.cursorSelection.font.pointSize = size
                                 editorArea.forceActiveFocus()
                             }
@@ -243,39 +243,43 @@ Page {
             clip: true
 
             TextArea {
-                topPadding: 10
                 id: editorArea
+                topPadding: 10
+
+                // 1. STABILITY FIX: Use RichText.
+                // It plays perfectly with Android spellcheck and autocomplete.
+                textFormat: TextEdit.RichText
+
                 font.pointSize: 12
                 font.family: "Georgia"
                 wrapMode: Text.Wrap
-                textFormat: TextEdit.MarkdownText
 
                 background: null
                 color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
 
-                // keep selection presistant
+                // 2. SELECTION FIX:
+                // Enable persistent selection so formatting works,
+                // BUT disable 'selectByMouse' on mobile to get the native teardrop handles.
                 persistentSelection: true
-                selectByMouse: !root.isMobile // let Android handle touch natively
+                selectByMouse: !root.isMobile
 
-                // when user moves cursor, update Tool box acc to it
+                // 3. CURSOR JUMP FIX:
+                // This simple check prevents the UI from fighting Gboard while typing.
                 onCursorPositionChanged: {
-                    // If the keyboard is "thinking" (underlined text), DO NOT interfere.
-                    if (editorArea.inputMethodComposing) return
+                    if (editorArea.inputMethodComposing)
+                        return
 
-                    // get size logic
                     let size = editorArea.cursorSelection.font.pointSize
                     if (size !== undefined && size > 0) {
-                        toolbar.currentFontSize = Math.round(size).toString(
-                                    ) // for now(lets only handle int size)
+                        toolbar.currentFontSize = Math.round(size).toString()
                     } else {
                         toolbar.currentFontSize = "12"
                     }
 
-                    // Sync the buttons
+                    // Sync visual state
                     toolbar.isBold = editorArea.cursorSelection.font.bold
                     toolbar.isItalic = editorArea.cursorSelection.font.italic
                     toolbar.isUnderline = editorArea.cursorSelection.font.underline
-                    //TODO: get color and background color here
                 }
             }
         }
