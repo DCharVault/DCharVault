@@ -255,10 +255,13 @@ Page {
 
                 // keep selection presistant
                 persistentSelection: true
-                selectByMouse: true
+                selectByMouse: !root.isMobile // let Android handle touch natively
 
                 // when user moves cursor, update Tool box acc to it
                 onCursorPositionChanged: {
+                    // If the keyboard is "thinking" (underlined text), DO NOT interfere.
+                    if (editorArea.inputMethodComposing) return
+
                     // get size logic
                     let size = editorArea.cursorSelection.font.pointSize
                     if (size !== undefined && size > 0) {
@@ -268,8 +271,10 @@ Page {
                         toolbar.currentFontSize = "12"
                     }
 
-                    //TODO: get bold italic underline here
-
+                    // Sync the buttons
+                    toolbar.isBold = editorArea.cursorSelection.font.bold
+                    toolbar.isItalic = editorArea.cursorSelection.font.italic
+                    toolbar.isUnderline = editorArea.cursorSelection.font.underline
                     //TODO: get color and background color here
                 }
             }
