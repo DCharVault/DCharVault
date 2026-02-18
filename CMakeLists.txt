@@ -113,8 +113,8 @@ qt_add_qml_module(appDCharVault
         viewmodel/LoginViewModel.cpp
         model/DiaryManager.cpp
     RESOURCES
-        app_icon.rc
-        PreviousEditorViewLogic
+        # app_icon.rc
+
 )
 
 set_target_properties(appDCharVault PROPERTIES
