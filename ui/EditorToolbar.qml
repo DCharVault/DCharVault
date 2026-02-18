@@ -8,26 +8,30 @@ ToolBar {
 
     // 1-- inputs and outputs
     // the parent tell us: "Are we on Mobile?"
-    property bool isMobile: false
+    property bool isMobile: true
 
     property alias currentFontSize: sizeField.text
 
+    property bool isBold: false
+    property bool isItalic: false
+    property bool isUnderline: false
+
     // hardcoded height:
-    height: 63
+    // height: 63
 
     // We tell parent: "User clicked Bold!"
-    signal boldClicked()
-    signal italicClicked()
-    signal underlineClicked()
-    signal colorClicked()
-    signal highlighterClicked()
-    signal doneClicked()
+    signal boldClicked
+    signal italicClicked
+    signal underlineClicked
+    signal colorClicked
+    signal highlighterClicked
+    signal doneClicked
     signal fontSelected(string fontName)
-    signal menuClicked()
+    signal menuClicked
     signal fontSizeSelected(int sizeFont)
 
     // 2 Visuals
-    Material.background: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
+    // Material.background: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
     Material.elevation: isMobile ? 8 : 0 // Shadow only on mobile
 
     // a tiny border line for desktop mode
@@ -36,13 +40,14 @@ ToolBar {
         width: parent.width
         height: 5
         anchors.bottom: parent.bottom
-        color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
+        // color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
     }
 
     // 3 Buttons
     RowLayout {
         anchors.fill: parent
         spacing: 5
+        anchors.margins: 5
 
         // 1. MOBILE MENU BUTTON (Hamburger)
         ToolButton {
@@ -60,83 +65,116 @@ ToolBar {
             Layout.preferredHeight: 50
         }
 
-        //Font Family(hidden on mobile
-        ComboBox {
-            visible: !root.isMobile
-            model: ["Segoe UI", "Georgia", "Roboto"]
-            Layout.preferredWidth: 150
-            Layout.preferredHeight: 50
-            Layout.leftMargin: 5 // Breathing room
-        }
-
         // --- Font Size Stepper ---
-        Rectangle{
+        // --- COMPACT Font Size Stepper (Fixed) ---
+        Rectangle {
             id: stepperPill
 
-            // unified dimensions and style
-            Layout.preferredWidth: 100 // compact width
-            Layout.preferredHeight: 36
+            // Auto-width based on content + a little breathing room
+            Layout.preferredWidth: stepperRow.implicitWidth + 8
+            Layout.preferredHeight: 32 // Standard touch-friendly height
             Layout.alignment: Qt.AlignVCenter
 
             radius: 4
             color: "#F5F5F5"
             border.color: "#E0E0E0"
-            border.width: 1
 
-            // layout internal
-            RowLayout{
-                anchors.fill: parent
+            RowLayout {
+                id: stepperRow
+                anchors.centerIn: parent
                 spacing: 0
+
                 // Decrease Button
-                ToolButton{
-                    text: "-"
-                    Layout.preferredWidth: 24
+                ToolButton {
+                    text: "−"
+                    Layout.preferredWidth: 32 // Square button
                     Layout.fillHeight: true
+
+                    // Center the text perfectly
+                    contentItem: Text {
+                        text: parent.text
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        color: "#333"
+                    }
                     background: null
+
                     onClicked: {
-                        var newSize = parseInt(sizeField.text)-2
-                        if(newSize>=6){
+                        let newSize = parseInt(sizeField.text) - 2
+                        if (newSize >= 6) {
                             root.fontSizeSelected(newSize)
-                            sizeField.text = newSize
+                            sizeField.text = newSize.toString()
                         }
                     }
                 }
-                //Divider
-                Rectangle{width: 1; height: 20; color: "#D0D0D0"; Layout.alignment: Qt.AlignVCenter}
-                // input value box
-                TextField{
+
+                // Vertical Divider (Optional, keeps it clean)
+                Rectangle {
+                    width: 1
+                    height: 16
+                    color: "#DDD"
+                }
+
+                // Input value box
+                TextField {
                     id: sizeField
-                    text: "16" // default
+                    text: "12"
+
+                    // Enough width for "88" without cutting off
+                    Layout.preferredWidth: 36
                     Layout.fillHeight: true
-                    Layout.fillWidth: true
+
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
 
+                    // CRITICAL FIXES:
+                    padding: 0
+                    leftPadding: 0
+                    rightPadding: 0
+                    background: null
+                    selectByMouse: true
+
                     font.pixelSize: 14
                     color: "#333333"
-                    background: null
 
-                    // only allow for numbers 6 to 88
-                    validator: IntValidator{bottom: 6; top: 88}
-                    // apply when press enter
+                    validator: IntValidator {
+                        bottom: 6
+                        top: 88
+                    }
                     onAccepted: {
                         root.fontSizeSelected(parseInt(text))
-                        focus = false // hide keyboard
+                        focus = false
                     }
                 }
-                //Divider
-                Rectangle{width: 1; height: 20; color: "#D0D0D0"; Layout.alignment: Qt.AlignVCenter}
+
+                // Vertical Divider
+                Rectangle {
+                    width: 1
+                    height: 16
+                    color: "#DDD"
+                }
+
                 // Increase Button
-                ToolButton{
+                ToolButton {
                     text: "+"
-                    Layout.preferredWidth: 24
+                    Layout.preferredWidth: 32 // Square button
                     Layout.fillHeight: true
+
+                    contentItem: Text {
+                        text: parent.text
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        color: "#333"
+                    }
                     background: null
+
                     onClicked: {
-                        var newSize = parseInt(sizeField.text)+2
-                        if(newSize<=72){
+                        let newSize = parseInt(sizeField.text) + 2
+                        if (newSize <= 72) {
                             root.fontSizeSelected(newSize)
-                            sizeField.text = newSize
+                            sizeField.text = newSize.toString()
                         }
                     }
                 }
@@ -145,17 +183,20 @@ ToolBar {
 
         ToolButton {
             text: "<b>B</b>"
-            focusPolicy: Qt.NoFocus // stop button from stealing focus from textEditorArea
+            checkable: root.isBold
+            checked: root.isBold
             onClicked: root.boldClicked()
         }
         ToolButton {
             text: "<i>I</i>"
-            focusPolicy: Qt.NoFocus
+            checkable: root.isItalic
+            checked: root.isItalic
             onClicked: root.italicClicked()
         }
         ToolButton {
             text: "<u>U</u>"
-            focusPolicy: Qt.NoFocus
+            checkable: root.isUnderline
+            checked: root.isUnderline
             onClicked: root.underlineClicked()
         }
         ToolSeparator {}

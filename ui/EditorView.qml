@@ -20,10 +20,9 @@ Page {
     // 1 settings
     // readonly property bool isMobile: Qt.platform.os === "android"
     // for testing switched to android view
-    readonly property bool isMobile: false
+    readonly property bool isMobile: true
 
     property int colorMode: 0 // 0 == text color, 1== highlight color
-
 
     // --- API ---
     property alias entryTitle: titleField.text
@@ -146,56 +145,54 @@ Page {
         onTriggered: editorArea.cursorSelection.font.underline = checked
     }
 
-    ColorDialog{
+    ColorDialog {
         id: colorPickerDialog
         title: root.colorMode === 0 ? "Select Text Color" : "Select Highlighter Color"
 
         selectedColor: root.colorMode === 0 ? editorArea.cursorSelection.color : "#FFFF00" // sync start color with current text
         onAccepted: {
-            if(colorMode == 0){
+            if (colorMode == 0) {
                 editorArea.cursorSelection.color = selectedColor
-            }
-            else{
+            } else {
                 editorArea.cursorSelection.font.backgroundColor = selectedColor
             }
-            editorArea.forceActiveFocus()// keep keyboard open
+            editorArea.forceActiveFocus() // keep keyboard open
         }
     }
 
     // 2 Toolbar logic
-    Component {
-        id: toolbarComponent
-        EditorToolbar {
-            id: toolbar
-            isMobile: root.isMobile
-            onMenuClicked: root.menuClicked()
-            // Use to trigger action direct
-            onBoldClicked: boldAction.trigger()
-            onItalicClicked: italicAction.trigger()
-            onUnderlineClicked: underlineAction.trigger()
+    header: EditorToolbar {
+        id: toolbar
+        isMobile: root.isMobile
+        onMenuClicked: root.menuClicked()
 
-            onFontSizeSelected: size => {
-                                    // use standard pt size here (12pt not pixel size)
-                                    editorArea.cursorSelection.font.pointSize = size
-                                    editorArea.forceActiveFocus()
-                                }
+        //toolbar update
+        isBold: boldAction.checked
+        isItalic: italicAction.checked
+        isUnderline: underlineAction.checked
 
-            onColorClicked: {
-                root.colorMode = 0 // mode text color
-                colorPickerDialog.open()
-            }
-            onHighlighterClicked: {
-                root.colorMode = 1 // mode highlighter color
-                colorPickerDialog.open()
-            }
+        // Use to trigger action direct
+        onBoldClicked: boldAction.trigger()
+        onItalicClicked: italicAction.trigger()
+        onUnderlineClicked: underlineAction.trigger()
 
-            onDoneClicked: Qt.inputMethod.hide()
+        onFontSizeSelected: size => {
+                                // use standard pt size here (12pt not pixel size)
+                                editorArea.cursorSelection.font.pointSize = size
+                                editorArea.forceActiveFocus()
+                            }
+
+        onColorClicked: {
+            root.colorMode = 0 // mode text color
+            colorPickerDialog.open()
         }
-    }
+        onHighlighterClicked: {
+            root.colorMode = 1 // mode highlighter color
+            colorPickerDialog.open()
+        }
 
-    header: Loader {
-        id: toolbarLoader
-        sourceComponent: toolbarComponent
+        onDoneClicked: Qt.inputMethod.hide()
+
         visible: true
     }
 
@@ -222,6 +219,14 @@ Page {
                 readonly property real textWidth: contentWidth
                 color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
             }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1 // 1px thin line
+                color: "#D0D0D0" // Subtle grey
+                opacity: 0.6 // Make it soft
+                Layout.topMargin: 0
+                Layout.bottomMargin: 15 // Push the title down a bit
+            }
             // date label
             Text {
                 id: dateLabel
@@ -240,10 +245,10 @@ Page {
             TextArea {
                 topPadding: 10
                 id: editorArea
-                font.pixelSize: 16
+                font.pointSize: 12
                 font.family: "Georgia"
                 wrapMode: Text.Wrap
-                textFormat: TextEdit.RichText
+                textFormat: TextEdit.MarkdownText
 
                 background: null
                 color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
@@ -256,11 +261,11 @@ Page {
                 onCursorPositionChanged: {
                     // get size logic
                     let size = editorArea.cursorSelection.font.pointSize
-                    if(size !== undefined && size>0){
-                        toolbarLoader.item.currentFontSize = Math.round(size).toString() // for now(lets only handle int size)
-                    }
-                    else{
-                        toolbarLoader.item.currentFontSize = "12"
+                    if (size !== undefined && size > 0) {
+                        toolbar.currentFontSize = Math.round(size).toString(
+                                    ) // for now(lets only handle int size)
+                    } else {
+                        toolbar.currentFontSize = "12"
                     }
 
                     //TODO: get bold italic underline here

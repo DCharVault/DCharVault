@@ -202,6 +202,12 @@ Item {
 
                     onClicked: root.createClicked()
                 }
+
+                // light/dark mode toggle
+                ToolButton{
+                    text: window.isDark ? "☀" :"️🌙"
+                    onClicked: window.isDark = !window.isDark
+                }
             }
         }
     }
