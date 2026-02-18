@@ -101,19 +101,20 @@ qt_add_qml_module(appDCharVault
     QML_FILES
         Main.qml
         ui/login.qml
-    SOURCES 
+        ui/HomeView.qml
+        ui/EditorView.qml
+        ui/EditorToolbar.qml
+        ui/SidebarView.qml
+    SOURCES
         model/DiaryEntry.h
         model/DiaryManager.h
         model/DiaryEntry.cpp
         model/VaultModel.cpp
         viewmodel/LoginViewModel.cpp
-        QML_FILES ui/HomeView.qml
-        QML_FILES ui/EditorView.qml
-        SOURCES model/DiaryManager.cpp
-        QML_FILES ui/EditorToolbar.qml
-        QML_FILES ui/SidebarView.qml
-        RESOURCES app_icon.rc
-        RESOURCES PreviousEditorViewLogic
+        model/DiaryManager.cpp
+    RESOURCES
+        app_icon.rc
+        PreviousEditorViewLogic
 )
 
 set_target_properties(appDCharVault PROPERTIES
