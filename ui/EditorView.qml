@@ -246,9 +246,7 @@ Page {
                 id: editorArea
                 topPadding: 10
 
-                // 1. STABILITY FIX: Use RichText.
-                // It plays perfectly with Android spellcheck and autocomplete.
-                textFormat: TextEdit.RichText
+                textFormat: TextEdit.MarkdownText
 
                 font.pointSize: 12
                 font.family: "Georgia"
@@ -257,11 +255,17 @@ Page {
                 background: null
                 color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
 
-                // 2. SELECTION FIX:
+                // 2. SELECTION FIX: only long press select supported right now
                 // Enable persistent selection so formatting works,
-                // BUT disable 'selectByMouse' on mobile to get the native teardrop handles.
+                selectByMouse: true
                 persistentSelection: true
-                selectByMouse: !root.isMobile
+                mouseSelectionMode: TextInput.SelectCharacters
+
+                onPressAndHold: (event) => {
+                                    if (editorArea.selectedText.length === 0) {
+                                        editorArea.selectWord()
+                                    }
+                                }
 
                 // 3. CURSOR JUMP FIX:
                 // This simple check prevents the UI from fighting Gboard while typing.

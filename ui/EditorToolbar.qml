@@ -215,7 +215,6 @@ ToolBar {
                 checked: root.isUnderline
                 onClicked: root.underlineClicked()
             }
-            ToolSeparator {}
 
             // Group 3: Colors (The new request)
             ToolButton {
