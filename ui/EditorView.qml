@@ -237,15 +237,22 @@ Page {
         }
 
         // --- CONTENT EDITOR ---
-        ScrollView {
+        // Replacing ScrollView with Flickable stops the screen shattering
+        // and fixes the detached selection handles.
+        Flickable {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            flickableDirection: Flickable.VerticalFlick
             clip: true
 
-            TextArea {
+            ScrollBar.vertical: ScrollBar {}
+
+            TextArea.flickable: TextArea {
                 id: editorArea
                 topPadding: 10
 
+                // Using Markdown for clean C++ data.
+                // (Note: Markdown will NOT save font sizes or colors)
                 textFormat: TextEdit.MarkdownText
 
                 font.pointSize: 12
@@ -255,20 +262,9 @@ Page {
                 background: null
                 color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
 
-                // 2. SELECTION FIX: only long press select supported right now
-                // Enable persistent selection so formatting works,
-                selectByMouse: true
+                // Qt 6.8 Native Selection Handling
                 persistentSelection: true
-                mouseSelectionMode: TextInput.SelectCharacters
 
-                onPressAndHold: (event) => {
-                                    if (editorArea.selectedText.length === 0) {
-                                        editorArea.selectWord()
-                                    }
-                                }
-
-                // 3. CURSOR JUMP FIX:
-                // This simple check prevents the UI from fighting Gboard while typing.
                 onCursorPositionChanged: {
                     if (editorArea.inputMethodComposing)
                         return
@@ -276,11 +272,8 @@ Page {
                     let size = editorArea.cursorSelection.font.pointSize
                     if (size !== undefined && size > 0) {
                         toolbar.currentFontSize = Math.round(size).toString()
-                    } else {
-                        toolbar.currentFontSize = "12"
                     }
 
-                    // Sync visual state
                     toolbar.isBold = editorArea.cursorSelection.font.bold
                     toolbar.isItalic = editorArea.cursorSelection.font.italic
                     toolbar.isUnderline = editorArea.cursorSelection.font.underline

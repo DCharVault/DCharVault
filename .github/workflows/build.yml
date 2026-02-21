@@ -14,7 +14,7 @@ on:
 
 jobs:
   # ============================================================================
-  # JOB 1: LINUX (Ubuntu) - Qt 6.6.3 LTS
+  # JOB 1: LINUX (Ubuntu) - Qt 6.8.2 LTS
   # ============================================================================
   build-linux:
     name: 🐧 Linux (Ubuntu)
@@ -43,7 +43,7 @@ jobs:
       run: cmake --build build --config Release
 
   # ============================================================================
-  # JOB 2: WINDOWS (MSVC) - Qt 6.6.3 LTS
+  # JOB 2: WINDOWS (MSVC) - Qt 6.8.2 LTS
   # ============================================================================
   build-windows:
     name: 🪟 Windows (MSVC)
@@ -74,7 +74,7 @@ jobs:
       run: cmake --build build --config Release
       
   # ============================================================================
-  # JOB 3: ANDROID (ARM64) - Qt 6.6.3 LTS
+  # JOB 3: ANDROID (ARM64) - Qt 6.8.2 LTS
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
@@ -128,31 +128,22 @@ jobs:
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
         
-    # 3.5 NUCLEAR FIX: Delete ALL incompatible Android SDKs
-    - name: Nuke Newer Android SDKs
-      run: |
-        echo "Deleting incompatible Android 35+ platforms..."
-        sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-36*
-        sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/36*
-        sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-35*
-        sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/35*
-    
-    # 4. Configure CMake (DEBUG MODE)
+
+    # 4. Configure CMake (RELEASE MODE)
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.2/gcc_64 
         
-        qt-cmake -B build -DCMAKE_BUILD_TYPE=Debug \
+        qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
         -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
         -DANDROID_ABI=arm64-v8a \
-        -DANDROID_PLATFORM=android-28 \
-        -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
-        -DQT_ANDROID_TARGET_SDK_VERSION=33 \
         -DQT_HOST_PATH=$QT_HOST_PATH
 
-    # 5. Build the APK (DEBUG MODE)
+
+    # 5. Build the APK (RELEASE MODE)
     - name: Build APK
-      run: cmake --build build --config Debug
+      run: cmake --build build --config Release
+      
 
     # 6. UPLOAD ARTIFACT
     - name: Upload Android APK
