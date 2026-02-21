@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Sql QuickControls2 QuickDialogs2)
 
-qt_standard_project_setup(REQUIRES 6.6)
+qt_standard_project_setup(REQUIRES 6.8)
 
 # ==============================================================================
 # 3. PLATFORM SPECIFIC SETUP (Windows, Android, Linux)
