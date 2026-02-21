@@ -129,7 +129,13 @@ jobs:
         cache: true
         
 
-    # 4. Configure CMake (RELEASE MODE)
+    # 3.5 Generate Android Keystore for Release Signing
+    - name: Generate Keystore
+      run: |
+        keytool -genkey -v -keystore release.keystore -alias vaultkey -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=Vault,O=Dev,C=US"
+        echo "KEYSTORE_PATH=$PWD/release.keystore" >> $GITHUB_ENV
+
+    # 4. Configure CMake (RELEASE MODE WITH SIGNING)
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.2/gcc_64 
@@ -137,7 +143,12 @@ jobs:
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
         -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
         -DANDROID_ABI=arm64-v8a \
-        -DQT_HOST_PATH=$QT_HOST_PATH
+        -DQT_HOST_PATH=$QT_HOST_PATH \
+        -DQT_ANDROID_SIGN_APK=ON \
+        -DQT_ANDROID_KEYSTORE_PATH=${{ env.KEYSTORE_PATH }} \
+        -DQT_ANDROID_KEYSTORE_ALIAS=vaultkey \
+        -DQT_ANDROID_KEYSTORE_STORE_PASS=password123 \
+        -DQT_ANDROID_KEYSTORE_KEY_PASS=password123
 
 
     # 5. Build the APK (RELEASE MODE)
