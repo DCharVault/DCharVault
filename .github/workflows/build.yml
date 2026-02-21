@@ -135,7 +135,7 @@ jobs:
         keytool -genkey -v -keystore release.keystore -alias vaultkey -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=Vault,O=Dev,C=US"
         echo "KEYSTORE_PATH=$PWD/release.keystore" >> $GITHUB_ENV
 
-    # 4. Configure CMake (RELEASE MODE WITH SIGNING)
+  # 4. Configure CMake (RELEASE MODE)
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.2/gcc_64 
@@ -144,17 +144,16 @@ jobs:
         -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
         -DANDROID_ABI=arm64-v8a \
         -DQT_HOST_PATH=$QT_HOST_PATH \
-        -DQT_ANDROID_SIGN_APK=ON \
-        -DQT_ANDROID_KEYSTORE_PATH=${{ env.KEYSTORE_PATH }} \
-        -DQT_ANDROID_KEYSTORE_ALIAS=vaultkey \
-        -DQT_ANDROID_KEYSTORE_STORE_PASS=password123 \
-        -DQT_ANDROID_KEYSTORE_KEY_PASS=password123
+        -DQT_ANDROID_SIGN_APK=ON
 
-
-    # 5. Build the APK (RELEASE MODE)
+    # 5. Build the APK (RELEASE MODE WITH SIGNING)
     - name: Build APK
+      env:
+        QT_ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/release.keystore
+        QT_ANDROID_KEYSTORE_ALIAS: vaultkey
+        QT_ANDROID_KEYSTORE_STORE_PASS: password123
+        QT_ANDROID_KEYSTORE_KEY_PASS: password123
       run: cmake --build build --config Release
-      
 
     # 6. UPLOAD ARTIFACT
     - name: Upload Android APK
