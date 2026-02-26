@@ -100,7 +100,7 @@ qt_add_qml_module(appDCharVault
         ui/HomeView.qml
         ui/desktop/EditorView.qml
         ui/desktop/EditorToolbar.qml
-        ui/SidebarView.qml
+        ui/desktop/SidebarView.qml
     SOURCES
         model/DiaryEntry.h
         model/DiaryManager.h
