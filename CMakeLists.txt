@@ -100,10 +100,10 @@ qt_add_qml_module(appDCharVault
     VERSION 1.0
     QML_FILES
         Main.qml
-        ui/login.qml
+        ui/common/login.qml
         ui/HomeView.qml
-        ui/EditorView.qml
-        ui/EditorToolbar.qml
+        ui/desktop/EditorView.qml
+        ui/desktop/EditorToolbar.qml
         ui/SidebarView.qml
     SOURCES
         model/DiaryEntry.h
