@@ -1,4 +1,3 @@
-# Qt & CMake Build Files
 build/
 release/
 debug/
@@ -10,6 +9,11 @@ cmake_install.cmake
 *.obj
 *.exe
 *.dll
+*.so
+*.dylib
+*.a
 .vscode/
 .idea/
 *.DS_Store
+*.userprefs
+Thumbs.db

@@ -9,11 +9,9 @@ find_package(Qt6 REQUIRED COMPONENTS Quick Sql QuickControls2 QuickDialogs2)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
-# ==============================================================================
-# 3. PLATFORM SPECIFIC SETUP (Windows, Android, Linux)
-# ==============================================================================
+# 3-> PLATFORM SPECIFIC SETUP (Windows, Android, Linux)
 
-# --- WINDOWS SETUP ---
+# --- WINDOWS SETUP
 if(WIN32 AND NOT ANDROID)
     if(DEFINED ENV{SODIUM_ROOT_ENV})
         set(SODIUM_ROOT $ENV{SODIUM_ROOT_ENV})
@@ -38,7 +36,7 @@ if(WIN32 AND NOT ANDROID)
     message(STATUS "Windows Security Core linked: ${SODIUM_LIB}")
 endif()
 
-# --- ANDROID SETUP ---
+# --- ANDROID SETUP
 if(ANDROID)
     if(DEFINED ENV{SODIUM_ANDROID_ROOT_ENV})
         set(SODIUM_ANDROID_ROOT $ENV{SODIUM_ANDROID_ROOT_ENV})
@@ -65,12 +63,11 @@ if(ANDROID)
     message(STATUS "Android Security Core linked: ${SODIUM_LIB}")
 endif()
 
-# --- LINUX / UNIX SETUP ---
+# --- LINUX / UNIX SETUP 
 if(UNIX AND NOT ANDROID AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SODIUM REQUIRED libsodium)
 
-    # 3. FIX: Fallback to find the specific folder if pkg-config is vague
     find_path(SODIUM_INCLUDE_DIR sodium.h 
         PATH_SUFFIXES sodium 
         PATHS ${SODIUM_INCLUDE_DIRS} /usr/include /usr/local/include
@@ -86,9 +83,8 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
     message(STATUS "Linux Security Core linked: ${SODIUM_LIB}")
 endif()
 
-# ==============================================================================
-# 4. APP TARGET
-# ==============================================================================
+
+# 4-> APP TARGET
 
 qt_add_executable(appDCharVault
     MANUAL_FINALIZATION
