@@ -84,23 +84,42 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 endif()
 
 
-# 4-> APP TARGET
+# --- 4. APP TARGET ---
 
 qt_add_executable(appDCharVault
     MANUAL_FINALIZATION
     main.cpp
 )
 
+# Base QML files that every platform needs
+set(APP_QML_FILES
+    Main.qml
+    ui/common/login.qml
+
+)
+
+# Branch the UI files based on the platform
+if(ANDROID)
+    list(APPEND APP_QML_FILES
+        ui/android/EditorView.qml
+        # ui/android/EditorToolbar.qml
+        ui/android/SidebarView.qml
+        ui/android/HomeView.qml
+    )
+else()
+    list(APPEND APP_QML_FILES
+        ui/desktop/EditorView.qml
+        ui/desktop/EditorToolbar.qml
+        ui/desktop/SidebarView.qml
+        ui/desktop/HomeView.qml
+    )
+endif()
+
 qt_add_qml_module(appDCharVault
     URI DCharVault
     VERSION 1.0
     QML_FILES
-        Main.qml
-        ui/common/login.qml
-        ui/HomeView.qml
-        ui/desktop/EditorView.qml
-        ui/desktop/EditorToolbar.qml
-        ui/desktop/SidebarView.qml
+        ${APP_QML_FILES}
     SOURCES
         model/DiaryEntry.h
         model/DiaryManager.h
@@ -108,9 +127,6 @@ qt_add_qml_module(appDCharVault
         model/VaultModel.cpp
         viewmodel/LoginViewModel.cpp
         model/DiaryManager.cpp
-    RESOURCES
-        # app_icon.rc
-
 )
 
 set_target_properties(appDCharVault PROPERTIES
@@ -126,9 +142,13 @@ target_link_libraries(appDCharVault
     PRIVATE Qt6::Sql
     PRIVATE Qt6::QuickControls2
     PRIVATE Qt6::QuickDialogs2
-    PRIVATE ${SODIUM_LIB}      
-    PRIVATE ${ANDROID_LOG_LIB} 
+    PRIVATE ${SODIUM_LIB}
 )
+
+# Only link Android log lib if we are actually on Android
+if(ANDROID)
+    target_link_libraries(appDCharVault PRIVATE ${ANDROID_LOG_LIB})
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS appDCharVault
