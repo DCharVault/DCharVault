@@ -48,7 +48,7 @@ bool DatabaseManager::createTable(){
     return true;
 }
 
-bool DatabaseManager::insertEntry(const QString &journal_name, const int64_t created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content){
+bool DatabaseManager::insertEntry(const QString &journal_name, const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content){
     QSqlQuery query;
     query.prepare("INSERT INTO journal(journal_name,created_at,updated_at,encrypted_title,encrypted_content) "
                   "VALUES(:journal_name,:created_at,:updated_at,:encrypted_title,:encrypted_content)");
@@ -66,7 +66,7 @@ bool DatabaseManager::insertEntry(const QString &journal_name, const int64_t cre
     return true;
 }
 
-bool DatabaseManager::deleteEntry(const int64_t id){
+bool DatabaseManager::deleteEntry(const qint64 id){
     QSqlQuery query;
     query.prepare("DELETE FROM journal WHERE id = :id");
     query.bindValue(":id",id);
@@ -78,7 +78,7 @@ bool DatabaseManager::deleteEntry(const int64_t id){
     return true;
 }
 
-bool DatabaseManager::updateEntry(const int64_t id, const QString &journal_name, const int64_t updated_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content)
+bool DatabaseManager::updateEntry(const qint64 id, const QString &journal_name, const qint64 updated_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content)
 {
     QSqlQuery query;
     query.prepare("UPDATE journal SET "

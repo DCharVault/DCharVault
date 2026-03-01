@@ -35,6 +35,7 @@ enum class DiaryError{
     EncryptionFailed,
     DecryptionFailed,
     IntegrityCheckFailed,
+    DatabaseError,
 };
 
 struct DiaryEntrySummary {

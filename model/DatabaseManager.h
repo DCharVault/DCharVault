@@ -10,9 +10,9 @@ public:
     DatabaseManager();
     bool databaseInit(const QString& dbPath);
     bool createTable();
-    bool insertEntry(const QString &journal_name, const int64_t created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content);
-    bool deleteEntry(const int64_t id);
-    bool updateEntry(const int64_t id, const QString &journal_name, const int64_t updated_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content);
+    bool insertEntry(const QString &journal_name, const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content);
+    bool deleteEntry(const qint64 id);
+    bool updateEntry(const qint64 id, const QString &journal_name, const qint64 updated_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content);
 private:
 
 };
