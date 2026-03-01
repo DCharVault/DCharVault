@@ -1,10 +1,13 @@
 #ifndef DIARYMANAGER_H
 #define DIARYMANAGER_H
 
+#include"DiaryEntry.h"
+#include"DatabaseManager.h"
+
 #include<vector>
 #include<string>
 #include <unordered_map>
-#include"DiaryEntry.h"
+
 
 enum class DiaryError{
     None,
@@ -35,7 +38,7 @@ enum class DiaryError{
 };
 
 struct DiaryEntrySummary {
-    std::string id;    // CHANGED: string_view -> string (Safety over micro-optimization)
+    int64_t id;
     std::string title; // CHANGED: string_view -> string
     int64_t createdAt;
     int64_t updatedAt;
@@ -52,36 +55,30 @@ public:
 
     std::vector<DiaryEntrySummary> readEntrySummaries() const;
     // const std::vector<DiaryEntry>& readEntries() const noexcept;
-    const DiaryEntry* readEntry(const std::string& id) const noexcept;
-    // CHANGED: Return std::string (ID) instead of pointer.
+    const DiaryEntry* readEntry(const int64_t id) const noexcept;
     // This is "Handle-based access" and is much safer for vectors.
     //[[nodiscard]] : if someone ignore return value error then warn them!!
-    [[nodiscard]] std::string createEntry(const std::string& title, const std::string& content);
-    [[nodiscard]] DiaryError updateEntry(const std::string& id, const std::string& title, const std::string& content);
-    [[nodiscard]] DiaryError deleteEntry(const std::string& id);
+    [[nodiscard]] int64_t createEntry(const std::string& title, const std::string& content);
+    [[nodiscard]] DiaryError updateEntry(const int64_t id, const std::string& title, const std::string& content);
+    [[nodiscard]] DiaryError deleteEntry(const int64_t id);
 
 private:
+    std::vector<uint8_t> masterKey;
+    DatabaseManager dbManager;
+
     // constructors functions
     [[nodiscard]] DiaryError loadFromDisk();
 
     // std::vector<DiaryEntrySummary> summaryCache;  still in disccuesion can sigthly increase Ram cosuption while minimizing cpu overhead
     std::vector<DiaryEntry> entries;
-    std::unordered_map<std::string, size_t> idToIndex;
+    std::unordered_map<int64_t, size_t> idToIndex;
 
     // validity checkers
     bool isLoadedFromDisk() const noexcept;
-    bool isValidId(const std::string& id) const noexcept;
-
-    // helper setters
-    [[nodiscard]] DiaryError setTitle(const std::string& id, const std::string& newTitle) noexcept;
-    [[nodiscard]] DiaryError setContent(const std::string& id, const std::string& newContent) noexcept;
-
-    // helper getters
-    const std::string* getTitle(const std::string& id) const noexcept;
-    const std::string* getContent(const std::string& id) const noexcept;
+    bool isValidId(const int64_t id) const noexcept;
 
     // Helper to find non-const entry internally
-    DiaryEntry* findEntryById(const std::string& id);
+    DiaryEntry* findEntryById(const int64_t id);
 };
 
 #endif

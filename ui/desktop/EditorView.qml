@@ -15,12 +15,6 @@ Page {
         editorArea.forceActiveFocus()
     }
 
-    signal menuClicked
-
-    // 1 settings
-    // readonly property bool isMobile: Qt.platform.os === "android"
-    // for testing switched to android view
-    readonly property bool isMobile: true
 
     property int colorMode: 0 // 0 == text color, 1== highlight color
 
@@ -163,9 +157,6 @@ Page {
     // 2 Toolbar logic
     header: EditorToolbar {
         id: toolbar
-        isMobile: root.isMobile
-        onMenuClicked: root.menuClicked()
-
         // Sync Toolbar State
         isBold: boldAction.checked
         isItalic: italicAction.checked
