@@ -29,7 +29,19 @@ bool DatabaseManager::databaseInit(const QString& dbPath){
 
 bool DatabaseManager::createTable(){
     QSqlQuery query;
-    QString createDiaryTable = R"(
+
+    const QString createConfigTable = R"(
+                                   CREATE TABLE IF NOT EXISTS vault_config(
+                                     key TEXT PRIMARY KEY,
+                                     value BLOB NOT NULL
+                                   )
+                                )";
+    if(!query.exec(createConfigTable)){
+        qCritical()<<"Failed to create config_vault: "<<query.lastError().text()<<"\n";
+        return false;
+    }
+
+    const QString createDiaryTable = R"(
                                   CREATE TABLE IF NOT EXISTS journal(
                                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                                     journal_name TEXT NOT NULL,
@@ -48,7 +60,38 @@ bool DatabaseManager::createTable(){
     return true;
 }
 
-bool DatabaseManager::insertEntry(const QString &journal_name, const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content){
+bool DatabaseManager::setConfigValue(const QString &key, const QByteArray &value){
+    QSqlQuery query;
+    query.prepare("INSERT OR REPLACE INTO vault_config (key, value) VALUES (:key, :value)");
+    query.bindValue(":key", key);
+    query.bindValue(":value", value);
+
+    if(!query.exec()){
+        qCritical() << "Failed to insert or update config table: " << query.lastError().text() << "\n";
+        return false;
+    }
+
+    qDebug() << "Success: Config key '" << key << "' saved!";
+    return true;
+}
+
+QByteArray DatabaseManager::getConfigValue(const QString &key) const {
+    QSqlQuery query;
+    query.prepare("SELECT value FROM vault_config WHERE key = :key");
+    query.bindValue(":key", key);
+
+    if(!query.exec()){
+        qCritical() << "Failed to execute get config value: " << query.lastError().text() << "\n";
+        return QByteArray();
+    }
+
+    if (query.next()) {
+        return query.value("value").toByteArray();
+    }
+    return QByteArray();
+}
+
+qint64 DatabaseManager::insertEntry(const QString &journal_name, const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content){
     QSqlQuery query;
     query.prepare("INSERT INTO journal(journal_name,created_at,updated_at,encrypted_title,encrypted_content) "
                   "VALUES(:journal_name,:created_at,:updated_at,:encrypted_title,:encrypted_content)");
@@ -59,11 +102,18 @@ bool DatabaseManager::insertEntry(const QString &journal_name, const qint64 crea
     query.bindValue(":encrypted_content",encrypted_content);
     if(!query.exec()){
         qCritical()<<"Failed to insert journal entries : "<<query.lastError().text()<<"\n";
-        return false;
+        return -1;
     }
 
     qDebug()<<"Success: Entry inserted!";
-    return true;
+
+    bool ok=false;
+    qint64 insertedId = query.lastInsertId().toLongLong(&ok);
+    if (!ok) {
+        qCritical() << "Fatal: Failed to convert last insert ID to qint64. Data state unknown.\n";
+        return -1;
+    }
+    return insertedId;
 }
 
 bool DatabaseManager::deleteEntry(const qint64 id){
