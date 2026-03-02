@@ -11,7 +11,7 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
 // --- Core Features ---
 [[nodiscard]] DiaryError DiaryManager::openDiary(const std::string& path, const std::string& password) {
     // TODO: Init database, create tables, derive libsodium key, load entries from DB.
-    dbManager.databaseInit(path);
+    dbManager.databaseInit(QString::fromStdString(path));
     dbManager.createTable();
     if(dbManager.getConfigValue("MY Crypto Salt").isEmpty()){
         // encryption manager call need: new salt generation ("MY new Cryto Salt)

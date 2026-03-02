@@ -5,7 +5,7 @@
 EncryptionManager::EncryptionManager(){}
 
 bool EncryptionManager::initialize(){
-    if(sodium.init()<0){
+    if(sodium_init()<0){
         qCritical()<<"Fatal: Library couldn't be initialized.\n";
         return false;
     }
@@ -13,5 +13,5 @@ bool EncryptionManager::initialize(){
 }
 
 QByteArray EncryptionManager::generateSalt(){
-
+    return QByteArray();
 }
