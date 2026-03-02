@@ -3,6 +3,7 @@
 
 #include"DiaryEntry.h"
 #include"DatabaseManager.h"
+#include"EncryptionManager.h"
 
 #include<vector>
 #include<string>
@@ -32,9 +33,14 @@ enum class DiaryError{
     DeserializationFailed,
 
     // Security
+    AuthenticationFailed,
+    CryptoError,
     EncryptionFailed,
     DecryptionFailed,
     IntegrityCheckFailed,
+
+    // Database
+    DatabaseOpenError,
     DatabaseError,
 };
 
@@ -66,6 +72,7 @@ public:
 private:
     std::vector<uint8_t> masterKey;
     DatabaseManager dbManager;
+    EncryptionManager encManager;
 
     // constructors functions
     [[nodiscard]] DiaryError loadFromDisk();

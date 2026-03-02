@@ -1,6 +1,8 @@
 #ifndef ENCRYPTIONMANAGER_H
 #define ENCRYPTIONMANAGER_H
 
+#include <sodium.h>
+
 #include<QByteArray>
 #include<string>
 #include<vector>

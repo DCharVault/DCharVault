@@ -1,6 +1,8 @@
 #include "DiaryManager.h"
 #include <algorithm>
 
+#include<QDebug>
+
 // --- Helpers ---
 DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
     auto it = idToIndex.find(id);
@@ -10,13 +12,34 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
 
 // --- Core Features ---
 [[nodiscard]] DiaryError DiaryManager::openDiary(const std::string& path, const std::string& password) {
-    // TODO: Init database, create tables, derive libsodium key, load entries from DB.
-    dbManager.databaseInit(QString::fromStdString(path));
-    dbManager.createTable();
-    if(dbManager.getConfigValue("MY Crypto Salt").isEmpty()){
-        // encryption manager call need: new salt generation ("MY new Cryto Salt)
-        // database manager call need: dbManager.setConfigValue("MY new Cryto Salt", salt)
+    if(!dbManager.databaseInit(QString::fromStdString(path))){
+        DiaryError::DatabaseOpenError;
     }
+    if(!dbManager.createTable()){
+        DiaryError::DatabaseError;
+    }
+
+    if (!encManager.initialize()) {
+        return DiaryError::CryptoError;
+    }
+
+    const QString saltKey = "crypto_salt";
+    QByteArray salt = dbManager.getConfigValue(saltKey);
+    if(salt.isEmpty()){
+        qDebug()<<"New vault Detected. generating new salt\n";
+        salt = encManager.generateSalt();
+        if(!dbManager.setConfigValue(saltKey,salt)){
+            return DiaryError::DatabaseError;
+        }
+    }else{
+        qDebug() << "Existing vault detected. Salt loaded.";
+    }
+
+    masterKey = encManager.deriveMasterKey(password,salt);
+    if(masterKey.empty()){
+        DiaryError::AuthenticationFailed;
+    }
+    qDebug() << "Success: Vault unlocked and Master Key securely loaded in memory.";
     // read bytes into encryption manager salt array from database manager call dbManager.getConfigValue()
     return DiaryError::None;
 }
