@@ -13,10 +13,10 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
 // --- Core Features ---
 [[nodiscard]] DiaryError DiaryManager::openDiary(const std::string& path, const std::string& password) {
     if(!dbManager.databaseInit(QString::fromStdString(path))){
-        DiaryError::DatabaseOpenError;
+        return DiaryError::DatabaseOpenError;
     }
     if(!dbManager.createTable()){
-        DiaryError::DatabaseError;
+        return DiaryError::DatabaseError;
     }
 
     if (!encManager.initialize()) {
@@ -37,7 +37,7 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
 
     masterKey = encManager.deriveMasterKey(password,salt);
     if(masterKey.empty()){
-        DiaryError::AuthenticationFailed;
+        return DiaryError::AuthenticationFailed;
     }
     qDebug() << "Success: Vault unlocked and Master Key securely loaded in memory.";
     // read bytes into encryption manager salt array from database manager call dbManager.getConfigValue()

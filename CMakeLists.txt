@@ -131,6 +131,7 @@ qt_add_qml_module(appDCharVault
         SOURCES model/DatabaseManager.h
         SOURCES model/EncryptionManager.h
         SOURCES model/EncryptionManager.cpp
+        SOURCES viewmodel/LoginViewModel.h
 )
 
 set_target_properties(appDCharVault PROPERTIES
