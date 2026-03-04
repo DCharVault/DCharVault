@@ -34,3 +34,54 @@ std::vector<uint8_t> EncryptionManager::deriveMasterKey(const std::string &passw
     qDebug()<<"SUCCESS: Derived Master Key.\n";
     return key;
 }
+
+QByteArray EncryptionManager::encryptString(const QString &inputString, const std::vector<uint8_t> &masterKey) {
+    QByteArray utf8String = inputString.toUtf8();
+
+    QByteArray nonce(crypto_aead_xchacha20poly1305_ietf_NPUBBYTES, Qt::Uninitialized);
+    randombytes_buf(nonce.data(), nonce.size());
+
+    QByteArray cipherText(utf8String.size() + crypto_aead_xchacha20poly1305_ietf_ABYTES, Qt::Uninitialized);
+    unsigned long long cipherText_len;
+
+    if(crypto_aead_xchacha20poly1305_ietf_encrypt(
+            reinterpret_cast<unsigned char*>(cipherText.data()), &cipherText_len,
+            reinterpret_cast<const unsigned char*>(utf8String.constData()), utf8String.size(),
+            nullptr, 0, nullptr,
+            reinterpret_cast<const unsigned char*>(nonce.constData()),
+            masterKey.data()) < 0) {
+        qCritical() << "Fatal: Failed to Encrypt String.\n";
+        return QByteArray();
+    }
+
+    cipherText.resize(cipherText_len);
+    qDebug() << "SUCCESS: String Encrypted!";
+    return nonce + cipherText;
+}
+
+QString EncryptionManager::decryptString(const QByteArray &inputBytes, const std::vector<uint8_t> &masterKey){
+    // It must contain at least a Nonce (24) and a MAC Tag (16).
+    if (inputBytes.size() < crypto_aead_xchacha20poly1305_ietf_NPUBBYTES + crypto_aead_xchacha20poly1305_ietf_ABYTES) {
+        qCritical() << "Fatal: Ciphertext is too short. Data is corrupted.";
+        return QString();
+    }
+
+    QByteArray nonce = inputBytes.left(crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
+    QByteArray cipherText = inputBytes.mid(crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
+    QByteArray decryptedBytes(cipherText.size() - crypto_aead_xchacha20poly1305_ietf_ABYTES, Qt::Uninitialized);
+    unsigned long long decryptedBytes_len;
+    if(crypto_aead_xchacha20poly1305_ietf_decrypt(
+            reinterpret_cast<unsigned char*>(decryptedBytes.data()), &decryptedBytes_len,
+            nullptr,
+            reinterpret_cast<const unsigned char*>(cipherText.constData()), cipherText.size(),
+            nullptr,0,
+            reinterpret_cast<const unsigned char*>(nonce.constData()),
+            masterKey.data())!=0){
+        qCritical() << "Fatal: Failed to Decrypt String. Authentication tag mismatched!\n";
+        return QString();
+    }
+    decryptedBytes.resize(decryptedBytes_len);
+    qDebug() << "SUCCESS: String Decrypted!";
+
+    return QString::fromUtf8(decryptedBytes);
+}
