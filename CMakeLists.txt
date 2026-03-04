@@ -127,7 +127,13 @@ qt_add_qml_module(appDCharVault
         model/VaultModel.cpp
         viewmodel/LoginViewModel.cpp
         model/DiaryManager.cpp
+        SOURCES model/DatabaseManager.cpp
+        SOURCES model/DatabaseManager.h
+        SOURCES model/EncryptionManager.h
+        SOURCES model/EncryptionManager.cpp
+        SOURCES viewmodel/LoginViewModel.h
 )
+
 
 set_target_properties(appDCharVault PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appDCharVault
