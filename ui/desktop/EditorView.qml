@@ -23,13 +23,31 @@ Page {
     property alias entryContent: editorArea.text
     property alias readOnly: editorArea.readOnly
 
+
+    Connections{
+        target: diaryViewModel
+        function onEntrySavedSuccessfully(){
+            console.log("QML: Success! Entry locked and saved in SQLite.")
+            // Reset the UI for the next entry
+                        titleField.text = ""
+                        editorArea.text = ""
+            editorArea.textDocument.modified = false
+        }
+        function onEntrySaveFailed(errorMessage){
+            console.error("QML Error: " + errorMessage)
+        }
+    }
+
+
     Action {
         id: saveAction
         text: "Save"
         shortcut: StandardKey.Save // ctrl+S
         enabled: editorArea.textDocument.modified
-        onTriggered: console.log(
-                         "Save Action Triggered! Currently in Development!!")
+        onTriggered: {
+            console.log("QML: Sending entry to viewModel: diaryViewModel.cpp");
+            diaryViewModel.saveNewEntry(titleField.text,editorArea.text);
+        }
     }
     Action {
         id: reloadAction

@@ -6,6 +6,7 @@
 
 #include "model/DiaryManager.h"
 #include "viewmodel/LoginViewModel.h"
+#include "viewmodel/DiaryViewModel.h"
 
 int main(int argc, char *argv[])
 {
@@ -22,6 +23,7 @@ int main(int argc, char *argv[])
     DiaryManager diaryManager;
     // Boot View Model
     LoginViewModel loginVM(diaryManager);
+    DiaryViewModel diaryVM(diaryManager);
 
     // UI LAUNCHER
     QQmlApplicationEngine engine;
@@ -30,6 +32,7 @@ int main(int argc, char *argv[])
     // This creates a global variable named "loginViewModel" inside your QML files,
     // pointing directly to your C++ loginVM object.
     engine.rootContext()->setContextProperty("loginViewModel", &loginVM);
+    engine.rootContext()->setContextProperty("diaryViewModel",&diaryVM);
 
     // MAGICAL FIX: Load directly from the compiled module
     // This works regardless of where the file is on the Z: drive
