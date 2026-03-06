@@ -20,7 +20,6 @@ ToolBar {
     signal fontSelected(string fontName)
     signal fontSizeSelected(int sizeFont)
 
-    Material.background: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
     Material.elevation: 0
 
     // A tiny border line for desktop mode
@@ -28,7 +27,6 @@ ToolBar {
         width: parent.width
         height: 5
         anchors.bottom: parent.bottom
-        color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
     }
 
     ScrollView {
@@ -171,8 +169,6 @@ ToolBar {
                 font.pixelSize: 16
                 onClicked: root.highlighterClicked()
             }
-
-            Item { Layout.fillWidth: true }
         }
     }
 }

@@ -10,20 +10,17 @@ Page {
         anchors.fill: parent
         orientation: Qt.Horizontal
 
-        // Custom Handle
         handle: Rectangle {
-            implicitWidth: 1
+            implicitWidth: 2
             color: "#E0E0E0"
         }
 
-        // --- LEFT PANE (Desktop Only) ---
         SidebarView {
-            SplitView.preferredWidth: 300
-            SplitView.minimumWidth: 200
-            SplitView.maximumWidth: 400
+            SplitView.preferredWidth: 230
+            SplitView.minimumWidth: 0
+            SplitView.maximumWidth: parent.width
         }
 
-        // --- RIGHT PANE (Editor) ---
         EditorView {
             SplitView.fillWidth: true
         }

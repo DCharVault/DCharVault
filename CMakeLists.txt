@@ -132,6 +132,7 @@ qt_add_qml_module(appDCharVault
         SOURCES model/EncryptionManager.h
         SOURCES model/EncryptionManager.cpp
         SOURCES viewmodel/LoginViewModel.h
+        QML_FILES ui/common/about.qml
 )
 
 
