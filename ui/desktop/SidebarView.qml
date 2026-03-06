@@ -7,168 +7,186 @@ Item {
     id: root
 
     signal entrySelected(int index)
-    signal createClicked()
-    signal createDiaryClicked()
+    signal createClicked
+    signal createDiaryClicked
 
-    Rectangle {
-        anchors.fill: parent
-        color: "#F7F7F7"
-    }
+    // Global margin for consistent alignment
+    readonly property int globalMargin: 16
 
-    ColumnLayout {
+    RowLayout {
         anchors.fill: parent
         spacing: 0
 
-        // --- 1. HEADER: Journal Switcher ---
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 60
-            color: "transparent"
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 0
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 15
+            // ------------------------------------------
+            // 1. TOP HEADER (Notebook Name)
+            // ------------------------------------------
+            Rectangle {
+                Layout.fillWidth: true
+                height: 60 // Slightly taller to give the button room
+                color: "#ffffff"
 
-                ComboBox {
-                    Layout.fillWidth: true
-                    model: ["Personal Diary", "Work Notes", "Code Ideas"]
-                    background: null
-                    contentItem: Text {
-                        text: parent.displayText
-                        font.bold: true
-                        font.pixelSize: 18
-                        color: "#333333"
-                        verticalAlignment: Text.AlignVCenter
-                        elide: Text.ElideRight
-                    }
-                }
-
-                Button {
-                    text: "+"
-                    Layout.preferredWidth: 45
-                    Layout.preferredHeight: 45
-                    background: Rectangle {
-                        color: "#212121"
-                        radius: width / 2
-                    }
-                    contentItem: Text {
-                        text: "+"
-                        color: "white"
-                        font.pixelSize: 24
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: root.createDiaryClicked()
-                }
-            }
-        }
-
-        Rectangle { Layout.fillWidth: true; height: 1; color: "#E0E0E0" }
-
-        // --- 2. MIDDLE: The Entry List ---
-        ListView {
-            id: listView
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            topMargin: 5
-            spacing: 2
-            model: 10
-
-            delegate: ItemDelegate {
-                width: ListView.view.width
-                height: 75
-                highlighted: ListView.isCurrentItem
-                onClicked: {
-                    listView.currentIndex = index
-                    root.entrySelected(index)
-                }
-
-                background: Rectangle {
-                    color: parent.highlighted ? "#E3F2FD" : (parent.hovered ? "#F0F0F0" : "transparent")
-                    radius: 8
-                    anchors.margins: 4
+                RowLayout {
                     anchors.fill: parent
-                }
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 4
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Text {
-                            text: "Entry Title " + (index + 1)
-                            font.bold: true
-                            font.pixelSize: 15
-                            color: "#212121"
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
-                        }
-                        Text {
-                            text: "Feb " + (10 + index)
-                            color: "#757575"
-                            font.pixelSize: 11
-                        }
-                    }
+                    anchors.leftMargin: root.globalMargin
+                    anchors.rightMargin: root.globalMargin
 
                     Text {
-                        text: "This is a preview of what I wrote properly..."
-                        color: "#616161"
-                        font.pixelSize: 13
-                        elide: Text.ElideRight
+                        text: "My Notebook"
+                        font.pixelSize: 20 // Slightly larger to feel like a header
+                        font.bold: true
+                        color: "#222222"
                         Layout.fillWidth: true
+                    }
+
+                    // Dropdown button fixed to prevent overflow
+                    ToolButton {
+                        text: "▾"
+                        font.pixelSize: 24
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+                        // Make the button background transparent so it doesn't create an ugly grey circle
+                        background: Rectangle {
+                            color: parent.down ? "#eeeeee" : (parent.hovered ? "#f5f5f5" : "transparent")
+                            radius: 4
+                        }
+                    }
+                }
+
+                // Bottom border for the header
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    anchors.bottom: parent.bottom
+                    color: "#e0e0e0"
+                }
+            }
+
+            // ------------------------------------------
+            // 2. NOTE LIST (Note name & metadata)
+            // ------------------------------------------
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                color: "#f9f9f9" // Very subtle background color to make the white cards pop
+
+                ListView {
+                    id: noteList
+                    anchors.fill: parent
+                    clip: true
+
+                    // The secret to perfect list margins:
+                    leftMargin: root.globalMargin
+                    rightMargin: root.globalMargin
+                    topMargin: 12
+                    bottomMargin: 12
+                    spacing: 8
+
+                    model: ListModel {
+                        ListElement { title: "Project Brainstorm"; meta: "Today • 2 KB" }
+                        ListElement { title: "Weekly Meeting Notes For Team"; meta: "Yesterday • 5 KB" }
+                        ListElement { title: "Grocery List"; meta: "Oct 24 • 1 KB" }
+                        ListElement { title: "QML Ideas"; meta: "Oct 22 • 12 KB" }
+                    }
+
+                    delegate: Rectangle {
+                        // Dynamically calculate width based on the ListView's margins
+                        width: ListView.view.width - ListView.view.leftMargin - ListView.view.rightMargin
+                        height: 70
+
+                        // Rounded borders
+                        radius: 8
+                        border.color: noteList.currentIndex === index ? "#DC4D01" : "#e0e0e0"
+                        border.width: noteList.currentIndex === index ? 2 : 1
+                        color: noteList.currentIndex === index ? "#e3f2fd" : "#ffffff"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 4
+
+                            // Note Name
+                            Text {
+                                text: model.title
+                                font.pixelSize: 16
+                                font.bold: true
+                                color: "#222222"
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight // <-- STOPS TEXT OVERFLOW
+                            }
+
+                            // Metadata (Date, size, preview, etc.)
+                            Text {
+                                text: model.meta
+                                font.pixelSize: 13
+                                color: "#777777"
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: noteList.currentIndex = index
+                        }
                     }
                 }
             }
-            ScrollBar.vertical: ScrollBar { }
-        }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: "#E0E0E0" }
+            // ------------------------------------------
+            // 3. BOTTOM BAR (Search, Filter, Add Note)
+            // ------------------------------------------
+            Rectangle {
+                Layout.fillWidth: true
+                height: 64 // Slightly taller for better touch targets
+                color: "#ffffff"
 
-        // --- 3. FOOTER: Search & Add ---
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 70
-            color: "#FFFFFF"
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 12
-                spacing: 10
-
-                TextField {
-                    Layout.fillWidth: true
-                    placeholderText: "Search..."
-                    font.pixelSize: 14
-                    background: Rectangle {
-                        color: "#F5F5F5"
-                        radius: 8
-                    }
+                // Top border for the bottom bar
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    anchors.top: parent.top
+                    color: "#e0e0e0"
                 }
 
-                Button {
-                    text: "+"
-                    Layout.preferredWidth: 45
-                    Layout.preferredHeight: 45
-                    background: Rectangle {
-                        color: "#212121"
-                        radius: width / 2
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: root.globalMargin
+                    anchors.rightMargin: root.globalMargin
+                    spacing: 12
+
+                    // Search Input
+                    TextField {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        placeholderText: "🔍 Search..."
+                        background: Rectangle {
+                            color: "#f0f0f0"
+                            radius: 8 // Match the card radius
+                        }
+                        verticalAlignment: TextInput.AlignVCenter
+                        leftPadding: 12
                     }
-                    contentItem: Text {
+
+                    // Add New Note Button
+                    Button {
                         text: "+"
-                        color: "white"
                         font.pixelSize: 24
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: root.createClicked()
-                }
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
 
-                ToolButton {
-                    text: window.isDark ? "☀" :"️🌙"
-                    onClicked: window.isDark = !window.isDark
+                        // Custom background to match the aesthetic
+                        background: Rectangle {
+                            color: parent.down ? "#d5d5d5" : (parent.hovered ? "#e0e0e0" : "#eeeeee")
+                            radius: 8
+                        }
+
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Add new note"
+                    }
                 }
             }
         }

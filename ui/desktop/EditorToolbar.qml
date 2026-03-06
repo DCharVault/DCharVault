@@ -20,15 +20,11 @@ ToolBar {
     signal fontSelected(string fontName)
     signal fontSizeSelected(int sizeFont)
 
-    Material.background: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
-    Material.elevation: 0
 
     // A tiny border line for desktop mode
     Rectangle {
         width: parent.width
-        height: 5
         anchors.bottom: parent.bottom
-        color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
     }
 
     ScrollView {
@@ -38,6 +34,7 @@ ToolBar {
         contentWidth: toolbarLayout.implicitWidth
         contentHeight: parent.height
         clip: true
+
 
         RowLayout {
             id: toolbarLayout
@@ -171,8 +168,6 @@ ToolBar {
                 font.pixelSize: 16
                 onClicked: root.highlighterClicked()
             }
-
-            Item { Layout.fillWidth: true }
         }
     }
 }

@@ -5,6 +5,7 @@ import DCharVault
 
 ApplicationWindow {
     id: rootWindow
+
     width: 800
     height: 600
     visible: true
