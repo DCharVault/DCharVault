@@ -4,7 +4,9 @@ import QtQuick.Layouts
 
 Page {
     id: root
-    background: Rectangle { color: "#FAFAFA" }
+    background: Rectangle {
+        color: "#FAFAFA"
+    }
 
     SplitView {
         anchors.fill: parent
@@ -19,9 +21,21 @@ Page {
             SplitView.preferredWidth: 230
             SplitView.minimumWidth: 0
             SplitView.maximumWidth: parent.width
+            onEntrySelected: function (entryId, entryTitle) {
+                console.log("QML: User clicked entry ID:", entryId)
+                let secretContent = diaryViewModel.loadEntryContent(entryId)
+                mainEditor.entryTitle = entryTitle
+                mainEditor.entryContent = secretContent
+            }
+            onCreateClicked: {
+                console.log("QML: Preparing empty editor for new note")
+                mainEditor.entryTitle = ""
+                mainEditor.entryContent = ""
+            }
         }
 
         EditorView {
+            id: mainEditor
             SplitView.fillWidth: true
         }
     }

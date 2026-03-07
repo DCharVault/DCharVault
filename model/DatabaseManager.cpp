@@ -92,6 +92,23 @@ QByteArray DatabaseManager::getConfigValue(const QString &key) const {
     return QByteArray();
 }
 
+QByteArray DatabaseManager::getEntryContent(int64_t id) const{
+    QSqlQuery query;
+    query.prepare("SELECT encrypted_content FROM journal WHERE id = :id");
+    query.bindValue(":id",QVariant::fromValue(id));
+
+    if (!query.exec()) {
+        qCritical() << "Failed to fetch content:" << query.lastError().text();
+        return QByteArray();
+    }
+
+    if(query.next()){
+        return query.value(0).toByteArray();
+    }
+    qWarning() << "No content found in database for ID:" << id;
+    return QByteArray();
+}
+
 qint64 DatabaseManager::insertEntry(const QString &journal_name, const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content){
     QSqlQuery query;
     query.prepare("INSERT INTO journal(journal_name,created_at,updated_at,encrypted_title,encrypted_content) "

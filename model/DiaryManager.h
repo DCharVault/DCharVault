@@ -61,6 +61,7 @@ public:
     [[nodiscard]] DiaryError openDiary(const QString& path, const std::string& password);
 
     std::vector<DiaryEntrySummary> readEntrySummaries();
+    QString readEntryContent(int64_t id);
     // const std::vector<DiaryEntry>& readEntries() const noexcept;
     const DiaryEntry* readEntry(const int64_t id) const noexcept;
     // This is "Handle-based access" and is much safer for vectors.

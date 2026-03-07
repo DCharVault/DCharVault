@@ -17,3 +17,8 @@ void DiaryViewModel::saveNewEntry(const QString &title, const QString &content){
         emit entrySaveFailed("Failed to encrypt or save the entry to the database.");
     }
 }
+
+QString DiaryViewModel::loadEntryContent(qint64 id){
+    qDebug() << "DiaryViewModel: Received request to load content for ID:" << id;
+    return m_diaryManager.readEntryContent(id);
+}

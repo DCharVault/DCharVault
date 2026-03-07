@@ -10,6 +10,7 @@ class DiaryViewModel : public QObject{
 public:
     explicit DiaryViewModel(DiaryManager& manager, QObject *parent=nullptr);
     Q_INVOKABLE void saveNewEntry(const QString& title, const QString& content);
+    Q_INVOKABLE QString loadEntryContent(qint64 id);
 signals:
     void entrySavedSuccessfully();
     void entrySaveFailed(const QString& errorMessage);
