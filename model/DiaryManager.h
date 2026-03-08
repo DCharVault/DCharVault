@@ -46,10 +46,10 @@ enum class DiaryError{
 
 struct DiaryEntrySummary {
     int64_t id;
-    std::string title; // CHANGED: string_view -> string
+    QString title;
     int64_t createdAt;
     int64_t updatedAt;
-    bool bookmarked;
+    int64_t bookmarked;
 };
 
 class DiaryManager{
@@ -60,7 +60,8 @@ public:
     // The worker function: Called later when the user interacts with the UI.
     [[nodiscard]] DiaryError openDiary(const QString& path, const std::string& password);
 
-    std::vector<DiaryEntrySummary> readEntrySummaries() const;
+    std::vector<DiaryEntrySummary> readEntrySummaries();
+    QString readEntryContent(int64_t id);
     // const std::vector<DiaryEntry>& readEntries() const noexcept;
     const DiaryEntry* readEntry(const int64_t id) const noexcept;
     // This is "Handle-based access" and is much safer for vectors.
@@ -76,6 +77,7 @@ private:
 
     // constructors functions
     [[nodiscard]] DiaryError loadFromDisk();
+    std::vector<DiaryEntrySummary> loadAllMetadata();
 
     // std::vector<DiaryEntrySummary> summaryCache;  still in disccuesion can sigthly increase Ram cosuption while minimizing cpu overhead
     std::vector<DiaryEntry> entries;

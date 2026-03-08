@@ -50,6 +50,35 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
     return DiaryError::None;
 }
 
+std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
+    std::vector<DiaryEntrySummary> decryptedSummaries;
+    if(masterKey.empty()){
+        qCritical() << "Fatal: Master Key is empty. Cannot decrypt metadata.";
+        return decryptedSummaries;
+    }
+
+    //fetch raw encrypted bytes from database
+    std::vector<EntryMetadata> rawBytes = dbManager.getAllEntriesMetadata();
+
+    for(const auto& meta : rawBytes){
+        QString decryptedTitle = encManager.decryptString(meta.encryptedTitle,masterKey);
+        if(decryptedTitle.isEmpty() && !meta.encryptedTitle.isEmpty()){
+            qCritical() << "Warning: Failed to decrypt title for entry ID:" << meta.id;
+            decryptedTitle = "[[ Decryption Failed - Corrupted ]]";
+        }
+        DiaryEntrySummary summary;
+        summary.id = meta.id;
+        summary.createdAt = meta.createdAt;
+        summary.updatedAt = meta.updatedAt;
+        summary.bookmarked = meta.bookmarked;
+        summary.title = decryptedTitle;
+
+        decryptedSummaries.push_back(summary);
+    }
+    qDebug() << "Success: Decrypted" << decryptedSummaries.size() << "titles for the sidebar.";
+    return decryptedSummaries;
+}
+
 [[nodiscard]] int64_t DiaryManager::createEntry(const QString& title, const QString& content) {
     // TODO: Encrypt text, call dbManager.insertEntry(), get new ID, add to vector.
     if(masterKey.empty()){
@@ -63,14 +92,8 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
     return insertedId;
 }
 
-std::vector<DiaryEntrySummary> DiaryManager::readEntrySummaries() const {
-    // (You can actually keep your old logic for this one, it was mostly fine)
-    std::vector<DiaryEntrySummary> summaries;
-    summaries.reserve(entries.size());
-    for (const auto& entry : entries) {
-        summaries.push_back({entry.id, entry.title, entry.createdAt, entry.updatedAt, entry.bookmarked});
-    }
-    return summaries;
+std::vector<DiaryEntrySummary> DiaryManager::readEntrySummaries() {
+    return loadAllMetadata();
 }
 
 const DiaryEntry* DiaryManager::readEntry(const int64_t id) const noexcept {
@@ -78,6 +101,27 @@ const DiaryEntry* DiaryManager::readEntry(const int64_t id) const noexcept {
     if(it == idToIndex.end()) return nullptr;
     return &entries[it->second];
 }
+
+QString DiaryManager::readEntryContent(int64_t id){
+    if (masterKey.empty()) {
+        qCritical() << "Fatal: Master Key is empty. Cannot decrypt content.";
+        return "";
+    }
+
+    QByteArray encryptedContent = dbManager.getEntryContent(id);
+    if (encryptedContent.isEmpty()) {
+        return ""; // Could be a genuinely blank note, or a DB error
+    }
+
+    QString decryptedContent = encManager.decryptString(encryptedContent,masterKey);
+    if (decryptedContent.isEmpty() && !encryptedContent.isEmpty()) {
+        qCritical() << "Warning: Failed to decrypt content for entry ID:" << id;
+        return "[[ Decryption Failed - Data Corrupted ]]";
+    }
+
+    return decryptedContent;
+}
+
 
 [[nodiscard]] DiaryError DiaryManager::updateEntry(const int64_t id, const std::string& title, const std::string& content) {
     // TODO: Encrypt text, call dbManager.updateEntry(), update vector.

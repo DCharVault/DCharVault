@@ -6,19 +6,26 @@ import QtQuick.Controls.Material
 Item {
     id: root
 
-    signal entrySelected(int index)
+    signal entrySelected(var entryId, string entryTitle)
     signal createClicked
     signal createDiaryClicked
 
     // Global margin for consistent alignment
     readonly property int globalMargin: 16
 
+    Component.onCompleted: {
+        console.log("Sidebar loaded. Requesting data from C++...")
+        diaryListModel.loadEntries()
+    }
+
     RowLayout {
         anchors.fill: parent
         spacing: 0
 
         ColumnLayout {
-            anchors.fill: parent
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
             spacing: 0
 
             // ------------------------------------------
@@ -85,16 +92,12 @@ Item {
                     bottomMargin: 12
                     spacing: 8
 
-                    model: ListModel {
-                        ListElement { title: "Project Brainstorm"; meta: "Today • 2 KB" }
-                        ListElement { title: "Weekly Meeting Notes For Team"; meta: "Yesterday • 5 KB" }
-                        ListElement { title: "Grocery List"; meta: "Oct 24 • 1 KB" }
-                        ListElement { title: "QML Ideas"; meta: "Oct 22 • 12 KB" }
-                    }
+                    model: diaryListModel
 
                     delegate: Rectangle {
                         // Dynamically calculate width based on the ListView's margins
-                        width: ListView.view.width - ListView.view.leftMargin - ListView.view.rightMargin
+                        width: ListView.view.width - ListView.view.leftMargin
+                               - ListView.view.rightMargin
                         height: 70
 
                         // Rounded borders
@@ -120,7 +123,9 @@ Item {
 
                             // Metadata (Date, size, preview, etc.)
                             Text {
-                                text: model.meta
+                                text: Qt.formatDateTime(
+                                          new Date(model.createdAt * 1000),
+                                          "MMM d, yyyy")
                                 font.pixelSize: 13
                                 color: "#777777"
                                 Layout.fillWidth: true
@@ -130,7 +135,10 @@ Item {
 
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: noteList.currentIndex = index
+                            onClicked: {
+                                noteList.currentIndex = index
+                                root.entrySelected(model.id,model.title)
+                            }
                         }
                     }
                 }
@@ -186,6 +194,10 @@ Item {
 
                         ToolTip.visible: hovered
                         ToolTip.text: "Add new note"
+
+                        onClicked: {
+                            root.createClicked()
+                        }
                     }
                 }
             }

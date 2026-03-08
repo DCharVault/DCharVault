@@ -47,6 +47,7 @@ bool DatabaseManager::createTable(){
                                     journal_name TEXT NOT NULL,
                                     created_at INTEGER NOT NULL,
                                     updated_at INTEGER NOT NULL,
+                                    bookmarked INTEGER DEFAULT 0 NOT NULL,
                                     encrypted_title BLOB NOT NULL,
                                     encrypted_content BLOB NOT NULL
                                   )
@@ -88,6 +89,23 @@ QByteArray DatabaseManager::getConfigValue(const QString &key) const {
     if (query.next()) {
         return query.value("value").toByteArray();
     }
+    return QByteArray();
+}
+
+QByteArray DatabaseManager::getEntryContent(int64_t id) const{
+    QSqlQuery query;
+    query.prepare("SELECT encrypted_content FROM journal WHERE id = :id");
+    query.bindValue(":id",QVariant::fromValue(id));
+
+    if (!query.exec()) {
+        qCritical() << "Failed to fetch content:" << query.lastError().text();
+        return QByteArray();
+    }
+
+    if(query.next()){
+        return query.value(0).toByteArray();
+    }
+    qWarning() << "No content found in database for ID:" << id;
     return QByteArray();
 }
 
@@ -149,4 +167,31 @@ bool DatabaseManager::updateEntry(const qint64 id, const QString &journal_name, 
     }
     qDebug()<<"Success: Entry updated!";
     return true;
+}
+
+std::vector<EntryMetadata> DatabaseManager::getAllEntriesMetadata(){
+    std::vector<EntryMetadata> eMeta;
+    QSqlQuery query;
+
+    query.prepare("SELECT id, created_at, updated_at, bookmarked, encrypted_title "
+                  "FROM journal "
+                  "ORDER BY created_at DESC");
+
+    if(!query.exec()){
+        qCritical() << "Failed to fetch journal entries metadata:" << query.lastError().text();
+        return eMeta;
+    }
+
+    while(query.next()){
+        EntryMetadata meta;
+        meta.id = query.value(0).toLongLong();
+        meta.createdAt = query.value(1).toLongLong();
+        meta.updatedAt = query.value(2).toLongLong();
+        meta.bookmarked = query.value(3).toLongLong();
+        meta.encryptedTitle = query.value(4).toByteArray();
+        eMeta.push_back(meta);
+    }
+
+    qDebug() << "Success: Entry metadata fetched! Count:" << eMeta.size();
+    return eMeta;
 }

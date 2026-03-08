@@ -5,7 +5,7 @@
 
 
 struct DiaryEntry{
-    bool bookmarked = false;
+    int64_t bookmarked = false;
     int64_t createdAt=0;
     int64_t updatedAt=0;
     int64_t id;

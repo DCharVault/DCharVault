@@ -26,9 +26,7 @@ Page {
         target: diaryViewModel
         function onEntrySavedSuccessfully(){
             console.log("QML: Success! Entry locked and saved in SQLite.")
-            // Reset the UI for the next entry
-                        titleField.text = ""
-                        editorArea.text = ""
+            diaryListModel.loadEntries()
             editorArea.textDocument.modified = false
         }
         function onEntrySaveFailed(errorMessage){
