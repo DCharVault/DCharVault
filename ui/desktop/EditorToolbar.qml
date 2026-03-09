@@ -16,6 +16,7 @@ ToolBar {
     signal underlineClicked()
     signal colorClicked()
     signal highlighterClicked()
+    signal deleteEntryClicked()
     signal doneClicked()
     signal fontSelected(string fontName)
     signal fontSizeSelected(int sizeFont)
@@ -167,6 +168,13 @@ ToolBar {
                 palette.buttonText: "#FFA500"
                 font.pixelSize: 16
                 onClicked: root.highlighterClicked()
+            }
+
+            ToolButton{
+                text: "X"
+                palette.button: "#FFA500"
+                font.pixelSize: 16
+                onClicked: root.deleteEntryClicked()
             }
         }
     }

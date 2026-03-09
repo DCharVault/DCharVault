@@ -27,6 +27,7 @@ enum class DiaryError{
     // State
     EntryNotFound,
     EntryAlreadyExists,
+    MasterKeyNotFound,
 
     // Persistence
     SerializationFailed,
@@ -67,7 +68,7 @@ public:
     // This is "Handle-based access" and is much safer for vectors.
     //[[nodiscard]] : if someone ignore return value error then warn them!!
     [[nodiscard]] int64_t createEntry(const QString& title, const QString& content);
-    [[nodiscard]] DiaryError updateEntry(const int64_t id, const std::string& title, const std::string& content);
+    [[nodiscard]] DiaryError updateEntry(const int64_t id, const QString& title, const QString& content);
     [[nodiscard]] DiaryError deleteEntry(const int64_t id);
 
 private:

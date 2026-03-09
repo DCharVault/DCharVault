@@ -16,6 +16,7 @@ Page {
     }
 
     property int colorMode: 0 // 0 == text color, 1 == highlight color
+    property int currentEntryId: -1
 
     // --- API ---
     property alias entryTitle: titleField.text
@@ -24,16 +25,24 @@ Page {
 
     Connections{
         target: diaryViewModel
-        function onEntrySavedSuccessfully(){
+        function onEntrySavedSuccessfully(savedId){
             console.log("QML: Success! Entry locked and saved in SQLite.")
             diaryListModel.loadEntries()
+            root.currentEntryId = savedId
             editorArea.textDocument.modified = false
         }
         function onEntrySaveFailed(errorMessage){
             console.error("QML Error: " + errorMessage)
         }
+        function onEntryDeletedSuccessfully(){
+            console.log("QML: Entry deleted. Clearing editor.")
+            diaryListModel.loadEntries()
+            root.currentEntryId = -1
+            titleField.text = ""
+            editorArea.text = ""
+            editorArea.textDocument.modified = false
+        }
     }
-
 
     Action {
         id: saveAction
@@ -42,7 +51,18 @@ Page {
         enabled: editorArea.textDocument.modified
         onTriggered: {
             console.log("QML: Sending entry to viewModel: diaryViewModel.cpp");
-            diaryViewModel.saveNewEntry(titleField.text,editorArea.text);
+            console.log("CRITICAL DEBUG -> Hitting Save! currentEntryId is:", root.currentEntryId);
+            diaryViewModel.saveNewEntry(root.currentEntryId,titleField.text,editorArea.text);
+        }
+    }
+    Action{
+        id: deleteAction
+        text: "delete"
+        shortcut: StandardKey.Delete
+        enabled: root.currentEntryId!=-1 // only when we have a entry not blanked
+        onTriggered: {
+            console.log("QML: Requesting deletion of ID:", root.currentEntryId)
+            deleteConfirmDialog.open()
         }
     }
     Action {
@@ -109,6 +129,19 @@ Page {
             editorArea.forceActiveFocus()
         }
     }
+    MessageDialog{
+        id: deleteConfirmDialog
+        title: "Delete Entry"
+        text: "Are you sure you want to permanently delete this page?"
+        informativeText: "This action cannot be undone. The encrypted data will be wiped from the vault."
+        buttons: MessageDialog.Yes | MessageDialog.No
+        onButtonClicked: function(button,role){
+            if(button === MessageDialog.Yes){
+                console.log("QML: User confirmed. Requesting deletion of ID:", root.currentEntryId)
+                diaryViewModel.deleteEntry(root.currentEntryId);
+            }
+        }
+    }
 
     // Toolbar Header
     header: EditorToolbar {
@@ -134,6 +167,7 @@ Page {
             root.colorMode = 1
             colorPickerDialog.open()
         }
+        onDeleteEntryClicked: deleteAction.trigger()
         onDoneClicked: Qt.inputMethod.hide()
         visible: true
     }

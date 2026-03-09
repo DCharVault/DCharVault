@@ -9,11 +9,14 @@ class DiaryViewModel : public QObject{
     Q_OBJECT
 public:
     explicit DiaryViewModel(DiaryManager& manager, QObject *parent=nullptr);
-    Q_INVOKABLE void saveNewEntry(const QString& title, const QString& content);
-    Q_INVOKABLE QString loadEntryContent(qint64 id);
+    Q_INVOKABLE void saveNewEntry(const qint64 id, const QString& title, const QString& content);
+    Q_INVOKABLE QString loadEntryContent(const qint64 id);
+    Q_INVOKABLE void deleteEntry(const qint64 id);
 signals:
-    void entrySavedSuccessfully();
+    void entrySavedSuccessfully(const qint64 savedId);
     void entrySaveFailed(const QString& errorMessage);
+    void entryDeletedSuccessfully();
+    void entryDeleteFailed();
 private:
     DiaryManager& m_diaryManager;
 };
