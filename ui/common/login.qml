@@ -6,11 +6,15 @@ Window {
     width: 300
     height: 200
     visible: true
-    title: "QML Sample Login"
+    title: "Enter Journal Password"
 
     ColumnLayout {
         anchors.centerIn: parent
         spacing: 10
+
+        TextField{
+        
+}
 
         TextField {
             id: passwordInput
