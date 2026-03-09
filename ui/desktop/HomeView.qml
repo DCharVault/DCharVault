@@ -4,27 +4,38 @@ import QtQuick.Layouts
 
 Page {
     id: root
-    background: Rectangle { color: "#FAFAFA" }
+    background: Rectangle {
+        color: "#FAFAFA"
+    }
 
     SplitView {
         anchors.fill: parent
         orientation: Qt.Horizontal
 
-        // Custom Handle
         handle: Rectangle {
-            implicitWidth: 1
+            implicitWidth: 2
             color: "#E0E0E0"
         }
 
-        // --- LEFT PANE (Desktop Only) ---
         SidebarView {
-            SplitView.preferredWidth: 300
-            SplitView.minimumWidth: 200
-            SplitView.maximumWidth: 400
+            SplitView.preferredWidth: 230
+            SplitView.minimumWidth: 0
+            SplitView.maximumWidth: parent.width
+            onEntrySelected: function (entryId, entryTitle) {
+                console.log("QML: User clicked entry ID:", entryId)
+                let secretContent = diaryViewModel.loadEntryContent(entryId)
+                mainEditor.entryTitle = entryTitle
+                mainEditor.entryContent = secretContent
+            }
+            onCreateClicked: {
+                console.log("QML: Preparing empty editor for new note")
+                mainEditor.entryTitle = ""
+                mainEditor.entryContent = ""
+            }
         }
 
-        // --- RIGHT PANE (Editor) ---
         EditorView {
+            id: mainEditor
             SplitView.fillWidth: true
         }
     }

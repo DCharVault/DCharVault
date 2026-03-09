@@ -3,6 +3,7 @@
 
 #include"DiaryEntry.h"
 #include"DatabaseManager.h"
+#include"EncryptionManager.h"
 
 #include<vector>
 #include<string>
@@ -32,18 +33,23 @@ enum class DiaryError{
     DeserializationFailed,
 
     // Security
+    AuthenticationFailed,
+    CryptoError,
     EncryptionFailed,
     DecryptionFailed,
     IntegrityCheckFailed,
+
+    // Database
+    DatabaseOpenError,
     DatabaseError,
 };
 
 struct DiaryEntrySummary {
     int64_t id;
-    std::string title; // CHANGED: string_view -> string
+    QString title;
     int64_t createdAt;
     int64_t updatedAt;
-    bool bookmarked;
+    int64_t bookmarked;
 };
 
 class DiaryManager{
@@ -52,23 +58,26 @@ public:
     DiaryManager() = default;
     
     // The worker function: Called later when the user interacts with the UI.
-    [[nodiscard]] DiaryError openDiary(const std::string& path, const std::string& password);
+    [[nodiscard]] DiaryError openDiary(const QString& path, const std::string& password);
 
-    std::vector<DiaryEntrySummary> readEntrySummaries() const;
+    std::vector<DiaryEntrySummary> readEntrySummaries();
+    QString readEntryContent(int64_t id);
     // const std::vector<DiaryEntry>& readEntries() const noexcept;
     const DiaryEntry* readEntry(const int64_t id) const noexcept;
     // This is "Handle-based access" and is much safer for vectors.
     //[[nodiscard]] : if someone ignore return value error then warn them!!
-    [[nodiscard]] int64_t createEntry(const std::string& title, const std::string& content);
+    [[nodiscard]] int64_t createEntry(const QString& title, const QString& content);
     [[nodiscard]] DiaryError updateEntry(const int64_t id, const std::string& title, const std::string& content);
     [[nodiscard]] DiaryError deleteEntry(const int64_t id);
 
 private:
     std::vector<uint8_t> masterKey;
     DatabaseManager dbManager;
+    EncryptionManager encManager;
 
     // constructors functions
     [[nodiscard]] DiaryError loadFromDisk();
+    std::vector<DiaryEntrySummary> loadAllMetadata();
 
     // std::vector<DiaryEntrySummary> summaryCache;  still in disccuesion can sigthly increase Ram cosuption while minimizing cpu overhead
     std::vector<DiaryEntry> entries;

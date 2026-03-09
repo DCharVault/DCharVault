@@ -15,21 +15,35 @@ Page {
         editorArea.forceActiveFocus()
     }
 
-
-    property int colorMode: 0 // 0 == text color, 1== highlight color
+    property int colorMode: 0 // 0 == text color, 1 == highlight color
 
     // --- API ---
     property alias entryTitle: titleField.text
     property alias entryContent: editorArea.text
     property alias readOnly: editorArea.readOnly
 
+    Connections{
+        target: diaryViewModel
+        function onEntrySavedSuccessfully(){
+            console.log("QML: Success! Entry locked and saved in SQLite.")
+            diaryListModel.loadEntries()
+            editorArea.textDocument.modified = false
+        }
+        function onEntrySaveFailed(errorMessage){
+            console.error("QML Error: " + errorMessage)
+        }
+    }
+
+
     Action {
         id: saveAction
         text: "Save"
         shortcut: StandardKey.Save // ctrl+S
         enabled: editorArea.textDocument.modified
-        onTriggered: console.log(
-                         "Save Action Triggered! Currently in Development!!")
+        onTriggered: {
+            console.log("QML: Sending entry to viewModel: diaryViewModel.cpp");
+            diaryViewModel.saveNewEntry(titleField.text,editorArea.text);
+        }
     }
     Action {
         id: reloadAction
@@ -73,163 +87,95 @@ Page {
         onTriggered: editorArea.paste()
     }
 
-    // Alignment TRIO's
-    ActionGroup {
-        id: alignnmentGroup
-    }
-    Action {
-        id: alignLeftAction
-        text: "Align Left"
-        shortcut: "Ctrl+L"
-        checkable: true
-        ActionGroup.group: alignnmentGroup
-        checked: editorArea.cursorSelection.alignment === Qt.AlignLeft
-        onTriggered: {
-            editorArea.cursorSelection.alignment = Qt.AlignLeft
-            root.refreshCursor()
-        }
-    }
-    Action {
-        id: alignCentreAction
-        text: "Align Centre"
-        shortcut: "Ctrl+E"
-        checkable: true
-        ActionGroup.group: alignnmentGroup
-        checked: editorArea.cursorSelection.alignment === Qt.AlignCenter
-        onTriggered: {
-            editorArea.cursorSelection.alignment = Qt.AlignCenter
-            root.refreshCursor()
-        }
-    }
-    Action {
-        id: alignRightAction
-        text: "Align Right"
-        shortcut: "Ctrl+R"
-        checkable: true
-        ActionGroup.group: alignnmentGroup
-        checked: editorArea.cursorSelection.alignment === Qt.AlignRight
-        onTriggered: {
-            editorArea.cursorSelection.alignment = Qt.AlignRight
-            root.refreshCursor()
-        }
-    }
+    ActionGroup { id: alignnmentGroup }
+    Action { id: alignLeftAction; text: "Align Left"; shortcut: "Ctrl+L"; checkable: true; ActionGroup.group: alignnmentGroup; checked: editorArea.cursorSelection.alignment === Qt.AlignLeft; onTriggered: { editorArea.cursorSelection.alignment = Qt.AlignLeft; root.refreshCursor() } }
+    Action { id: alignCentreAction; text: "Align Centre"; shortcut: "Ctrl+E"; checkable: true; ActionGroup.group: alignnmentGroup; checked: editorArea.cursorSelection.alignment === Qt.AlignCenter; onTriggered: { editorArea.cursorSelection.alignment = Qt.AlignCenter; root.refreshCursor() } }
+    Action { id: alignRightAction; text: "Align Right"; shortcut: "Ctrl+R"; checkable: true; ActionGroup.group: alignnmentGroup; checked: editorArea.cursorSelection.alignment === Qt.AlignRight; onTriggered: { editorArea.cursorSelection.alignment = Qt.AlignRight; root.refreshCursor() } }
 
-    Action {
-        id: boldAction
-        text: "Bold"
-        shortcut: StandardKey.Bold // handles ctrl+B auto
-        checkable: true
-        checked: editorArea.cursorSelection.font.bold
-        onTriggered: editorArea.cursorSelection.font.bold = checked
-    }
-    Action {
-        id: italicAction
-        text: "Italic"
-        shortcut: StandardKey.Italic // handles ctrl+I auto
-        checkable: true
-        checked: editorArea.cursorSelection.font.italic
-        onTriggered: editorArea.cursorSelection.font.italic = checked
-    }
-    Action {
-        id: underlineAction
-        text: "Underline"
-        shortcut: StandardKey.Underline // handle ctrl+U auto
-        checkable: true
-        checked: editorArea.cursorSelection.font.underline
-        onTriggered: editorArea.cursorSelection.font.underline = checked
-    }
+    Action { id: boldAction; text: "Bold"; shortcut: StandardKey.Bold; checkable: true; checked: editorArea.cursorSelection.font.bold; onTriggered: editorArea.cursorSelection.font.bold = checked }
+    Action { id: italicAction; text: "Italic"; shortcut: StandardKey.Italic; checkable: true; checked: editorArea.cursorSelection.font.italic; onTriggered: editorArea.cursorSelection.font.italic = checked }
+    Action { id: underlineAction; text: "Underline"; shortcut: StandardKey.Underline; checkable: true; checked: editorArea.cursorSelection.font.underline; onTriggered: editorArea.cursorSelection.font.underline = checked }
 
     ColorDialog {
         id: colorPickerDialog
         title: root.colorMode === 0 ? "Select Text Color" : "Select Highlighter Color"
-
-        selectedColor: root.colorMode === 0 ? editorArea.cursorSelection.color : "#FFFF00" // sync start color with current text
+        selectedColor: root.colorMode === 0 ? editorArea.cursorSelection.color : "#FFFF00"
         onAccepted: {
             if (colorMode == 0) {
                 editorArea.cursorSelection.color = selectedColor
             } else {
                 editorArea.cursorSelection.font.backgroundColor = selectedColor
             }
-            editorArea.forceActiveFocus() // keep keyboard open
+            editorArea.forceActiveFocus()
         }
     }
 
-    // 2 Toolbar logic
+    // Toolbar Header
     header: EditorToolbar {
         id: toolbar
-        // Sync Toolbar State
         isBold: boldAction.checked
         isItalic: italicAction.checked
         isUnderline: underlineAction.checked
 
-        // Trigger Actions
         onBoldClicked: boldAction.trigger()
         onItalicClicked: italicAction.trigger()
         onUnderlineClicked: underlineAction.trigger()
 
         onFontSizeSelected: size => {
-                                // RichText handles point sizes natively and reliably
-                                editorArea.cursorSelection.font.pointSize = size
-                                editorArea.forceActiveFocus()
-                            }
+            editorArea.cursorSelection.font.pointSize = size
+            editorArea.forceActiveFocus()
+        }
 
         onColorClicked: {
-            root.colorMode = 0 // mode text color
+            root.colorMode = 0
             colorPickerDialog.open()
         }
         onHighlighterClicked: {
-            root.colorMode = 1 // mode highlighter color
+            root.colorMode = 1
             colorPickerDialog.open()
         }
-
         onDoneClicked: Qt.inputMethod.hide()
-
         visible: true
     }
 
-    // The editor content
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 10
-        spacing: 10
+        anchors.margins: 16 // MATCHED TO SIDEBAR MARGIN
+        spacing: 12 // Slightly more breathing room
 
         ColumnLayout {
-
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
-            spacing: 4
+            spacing: 8 // Unified spacing between title, line, and date
+
             // --- HEADER ---
             TextField {
                 id: titleField
                 Layout.fillWidth: true
-                font.pixelSize: 24
+                font.pixelSize: 22
                 font.bold: true
+                color: "#222222" // Matched to sidebar title color
                 background: null
                 selectByMouse: true
                 padding: 0
-                readonly property real textWidth: contentWidth
-                color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
             }
+
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 1 // 1px thin line
-                color: "#D0D0D0" // Subtle grey
-                opacity: 0.6 // Make it soft
-                Layout.topMargin: 0
-                Layout.bottomMargin: 15 // Push the title down a bit
+                Layout.preferredHeight: 1
+                color: "#e0e0e0" // Matched to sidebar border color exactly
             }
+
             // date label
             Text {
                 id: dateLabel
                 text: Qt.formatDateTime(new Date(), "dddd, MMMM d • h:mm AP")
-                color: "#C4A484"
-                font.pixelSize: 12
+                color: "#777777" // Matched to sidebar metadata color
+                font.pixelSize: 13 // Matched to sidebar metadata size
             }
         }
 
         // --- CONTENT EDITOR ---
-        // Replacing ScrollView with Flickable stops the screen shattering
-        // and fixes the detached selection handles.
         Flickable {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -240,25 +186,20 @@ Page {
 
             TextArea.flickable: TextArea {
                 id: editorArea
-                topPadding: 10
+                topPadding: 8
 
-                // Using Markdown for clean C++ data.
-                // (Note: Markdown will NOT save font sizes or colors)
-                textFormat: TextEdit.MarkdownText
+                // CRITICAL FIX: Use RichText to allow colors, backgrounds, and sizes to save properly
+                textFormat: TextEdit.RichText
 
                 font.pointSize: 12
-                font.family: "Georgia"
+                font.family: "Georgia" // Great choice for reading!
                 wrapMode: Text.Wrap
-
                 background: null
-                color: Material.theme === Material.Dark ? "#FFFFFF" : "#7B3F00"
-
-                // Qt 6.8 Native Selection Handling
                 persistentSelection: true
+                color: "#333333" // Softer black for long-form reading
 
                 onCursorPositionChanged: {
-                    if (editorArea.inputMethodComposing)
-                        return
+                    if (editorArea.inputMethodComposing) return
 
                     let size = editorArea.cursorSelection.font.pointSize
                     if (size !== undefined && size > 0) {

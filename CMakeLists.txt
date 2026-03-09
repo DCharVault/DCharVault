@@ -95,7 +95,7 @@ qt_add_executable(appDCharVault
 set(APP_QML_FILES
     Main.qml
     ui/common/login.qml
-
+    ui/common/about.qml
 )
 
 # Branch the UI files based on the platform
@@ -129,7 +129,16 @@ qt_add_qml_module(appDCharVault
         model/DiaryManager.cpp
         SOURCES model/DatabaseManager.cpp
         SOURCES model/DatabaseManager.h
+        SOURCES model/EncryptionManager.h
+        SOURCES model/EncryptionManager.cpp
+        SOURCES viewmodel/LoginViewModel.h
+
+        SOURCES viewmodel/DiaryViewModel.h
+        SOURCES viewmodel/DiaryViewModel.cpp
+        SOURCES viewmodel/DiaryListModel.h
+        SOURCES viewmodel/DiaryListModel.cpp
 )
+
 
 set_target_properties(appDCharVault PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appDCharVault
