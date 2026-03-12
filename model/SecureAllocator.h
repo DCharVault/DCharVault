@@ -39,6 +39,8 @@ struct SecureAllocator{
 
     //deallocator
     void deallocate(T* p, std::size_t n)noexcept{
+        // sodium_free automatically overwrites the memory with zeros before releasing it to the OS.
+        (void)n; // unused parameter
         sodium_free(p);
     }
 };
@@ -52,8 +54,7 @@ bool operator==(const SecureAllocator<T>&, const SecureAllocator<U>&){return tru
 template<typename T, typename U>
 bool operator!=(const SecureAllocator<T>&, const SecureAllocator<U>&){return false;}
 
+// Secure Containers as compare to String and Vector
 using SecureVector = std::vector<uint8_t, SecureAllocator<uint8_t>>;
-using SecureString = std::basic_string<char,std::char_traits<char>;
-SecureAllocator<char>>;
-
+using SecureString = std::basic_string<char, std::char_traits<char>, SecureAllocator<char>>;
 #endif // SECUREALLOCATOR_H
