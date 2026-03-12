@@ -123,12 +123,32 @@ QString DiaryManager::readEntryContent(int64_t id){
 }
 
 
-[[nodiscard]] DiaryError DiaryManager::updateEntry(const int64_t id, const std::string& title, const std::string& content) {
-    // TODO: Encrypt text, call dbManager.updateEntry(), update vector.
+[[nodiscard]] DiaryError DiaryManager::updateEntry(const int64_t id, const QString& title, const QString& content) {
+    if(masterKey.empty()){
+        qCritical()<<"Master Key is Empty! Cannot update entry";
+        return DiaryError::MasterKeyNotFound;
+    }
+    QByteArray titleEncrypted = encManager.encryptString(title,masterKey);
+    QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
+    qint64 updatedAt = QDateTime::currentSecsSinceEpoch();
+
+    //using hardcoded database name:
+    if(!dbManager.updateEntry(id,"Hardcoded journal",updatedAt,titleEncrypted,contentEncrypted)){
+        return DiaryError::DatabaseError;
+    }
     return DiaryError::None;
 }
 
 [[nodiscard]] DiaryError DiaryManager::deleteEntry(const int64_t id) {
-    // TODO: Call dbManager.deleteEntry(), securely wipe RAM, remove from vector.
+    if(masterKey.empty()){
+        qCritical()<<"Master Key is Empty! Cannot delete entry";
+        return DiaryError::MasterKeyNotFound;
+    }
+    if(id<=0){
+        return DiaryError::InvalidId;
+    }
+    if(!dbManager.deleteEntry(id)){
+        return DiaryError::DatabaseError;
+    }
     return DiaryError::None;
 }
