@@ -138,6 +138,8 @@ qt_add_qml_module(appDCharVault
         SOURCES viewmodel/DiaryListModel.h
         SOURCES viewmodel/DiaryListModel.cpp
         SOURCES model/SecureAllocator.h
+        SOURCES viewmodel/SecurePasswordInput.h
+        SOURCES viewmodel/SecurePasswordInput.cpp
 )
 
 

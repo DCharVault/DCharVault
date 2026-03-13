@@ -2,7 +2,7 @@
 #define ENCRYPTIONMANAGER_H
 
 #include <sodium.h>
-
+#include"SecureAllocator.h"
 #include<QByteArray>
 #include<string>
 #include<vector>
@@ -16,10 +16,10 @@ public:
 
     QByteArray generateSalt();
 
-    std::vector<uint8_t> deriveMasterKey(const std::string& password, const QByteArray& salt);
+    SecureVector deriveMasterKey(const std::string& password, const QByteArray& salt);
 
-    QByteArray encryptString(const QString& inputString, const std::vector<uint8_t>& masterKey);
-    QString decryptString(const QByteArray& inputBytes, const std::vector<uint8_t>& masterkey);
+    QByteArray encryptString(const QString& inputString, const SecureVector& masterKey);
+    QString decryptString(const QByteArray& inputBytes, const SecureVector& masterkey);
 
 private:
 };
