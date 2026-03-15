@@ -39,6 +39,7 @@ void SecurePasswordInput::keyPressEvent(QKeyEvent *event){
     // handle backspace
     if(key==Qt::Key_Backspace){
         if(!m_secureBuffer.empty()){
+            m_secureBuffer.back() = '\0';
             m_secureBuffer.pop_back();
             emit passwordLengthChanged();
         }
@@ -52,7 +53,7 @@ void SecurePasswordInput::keyPressEvent(QKeyEvent *event){
         return;
     }
     // handle printable charaters
-    QString text = event->text();
+    const QString &text = event->text();
     if(!text.isEmpty() && text.at(0).isPrint()){
         // take the raw ASCII/UTF-8 byte
         QByteArray bytes = text.toUtf8(); // converts a char to utf8, some special characters or symbols are multi-byte that why we need QByteArray

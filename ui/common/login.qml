@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-
+import QtQuick.Dialogs
 import Vault.Security 1.0
 
 Window {
@@ -10,9 +10,32 @@ Window {
     visible: true
     title: "QML Sample Login"
 
+    property string selectedDBUrl: ""
+    FileDialog{
+        id: vaultSelector
+        title: "Select Encrypted Vault"
+        nameFilters: ["Database files (*.db)","All files(*)"]
+        onAccepted: {
+            console.log("Qml: Vault Selected: "+currentFile)
+            selectedDBUrl = currentFile
+        }
+    }
+
     ColumnLayout {
         anchors.centerIn: parent
         spacing: 10
+
+        Button{
+            text: selectedDBUrl === "" ? "Select Vault File..." : "Change Vault File"
+            Layout.fillWidth: true
+            onClicked: vaultSelector.open()
+        }
+
+        Text{
+            text: selectedDBUrl === "" ? "No vault selected" : "Ready to unlock selected vault."
+            color: selectedDBUrl === "" ? "red" : "green"
+            Layout.alignment: Qt.AlignHCenter
+        }
 
         Label {
             text: "Enter Password"
@@ -31,11 +54,8 @@ Window {
             SecurePasswordInput {
                 id: secureInput
                 anchors.fill: parent
-                focus: true // Give it focus so it catches the keystrokes
-
-                // Visual feedback: Draw the asterisks
+                focus: true
                 Text {
-
                     anchors.fill: parent
                     anchors.margins: 12
                     verticalAlignment: Text.AlignVCenter
@@ -49,7 +69,7 @@ Window {
                 onEnterPressed: {
                     console.log("QML: Enter pressed. Triggering C++ authentication.")
                     // Pass the actual component to C++, NOT a text string
-                    loginViewModel.authenticate(secureInput)
+                    loginViewModel.authenticate(secureInput, selectedDBUrl)
                 }
             }
         }
@@ -58,7 +78,7 @@ Window {
             text: "Unlock Vault"
             Layout.alignment: Qt.AlignHCenter
             onClicked: {
-                loginViewModel.authenticate(secureInput)
+                loginViewModel.authenticate(secureInput, selectedDBUrl)
             }
         }
     }
