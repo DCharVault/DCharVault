@@ -5,6 +5,7 @@
 #include <QQmlContext>// Required to inject C++ into QML
 
 #include "model/DiaryManager.h"
+#include"viewmodel/SecurePasswordInput.h"
 #include "viewmodel/LoginViewModel.h"
 #include "viewmodel/DiaryViewModel.h"
 #include "viewmodel/DiaryListModel.h"
@@ -29,6 +30,9 @@ int main(int argc, char *argv[])
 
     // UI LAUNCHER
     QQmlApplicationEngine engine;
+
+    // register type SecurePasswordInput
+    qmlRegisterType<SecurePasswordInput>("Vault.Security",1,0,"SecurePasswordInput");
 
     // --- 3. INJECT THE BRIDGE INTO QML ---
     // This creates a global variable named "loginViewModel" inside your QML files,

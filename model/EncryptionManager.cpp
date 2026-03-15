@@ -19,9 +19,9 @@ QByteArray EncryptionManager::generateSalt(){
     return salt;
 }
 
-std::vector<uint8_t> EncryptionManager::deriveMasterKey(const std::string &password, const QByteArray &salt)
+SecureVector EncryptionManager::deriveMasterKey(const std::string &password, const QByteArray &salt)
 {
-    std::vector<uint8_t> key(crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
+    SecureVector key(crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
     if(crypto_pwhash(key.data(),key.size(),
                       password.c_str(),password.length(),
                       reinterpret_cast<const unsigned char*>(salt.constData()),
@@ -35,7 +35,7 @@ std::vector<uint8_t> EncryptionManager::deriveMasterKey(const std::string &passw
     return key;
 }
 
-QByteArray EncryptionManager::encryptString(const QString &inputString, const std::vector<uint8_t> &masterKey) {
+QByteArray EncryptionManager::encryptString(const QString &inputString, const SecureVector &masterKey) {
     QByteArray utf8String = inputString.toUtf8();
 
     QByteArray nonce(crypto_aead_xchacha20poly1305_ietf_NPUBBYTES, Qt::Uninitialized);
@@ -59,7 +59,7 @@ QByteArray EncryptionManager::encryptString(const QString &inputString, const st
     return nonce + cipherText;
 }
 
-QString EncryptionManager::decryptString(const QByteArray &inputBytes, const std::vector<uint8_t> &masterKey){
+QString EncryptionManager::decryptString(const QByteArray &inputBytes, const SecureVector &masterKey){
     // It must contain at least a Nonce (24) and a MAC Tag (16).
     if (inputBytes.size() < crypto_aead_xchacha20poly1305_ietf_NPUBBYTES + crypto_aead_xchacha20poly1305_ietf_ABYTES) {
         qCritical() << "Fatal: Ciphertext is too short. Data is corrupted.";

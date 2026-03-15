@@ -1,6 +1,7 @@
 #ifndef DIARYMANAGER_H
 #define DIARYMANAGER_H
 
+#include"SecureAllocator.h"
 #include"DiaryEntry.h"
 #include"DatabaseManager.h"
 #include"EncryptionManager.h"
@@ -72,7 +73,8 @@ public:
     [[nodiscard]] DiaryError deleteEntry(const int64_t id);
 
 private:
-    std::vector<uint8_t> masterKey;
+    SecureVector masterKey;
+    // std::vector<uint8_t> masterKey;
     DatabaseManager dbManager;
     EncryptionManager encManager;
 
