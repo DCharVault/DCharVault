@@ -24,7 +24,7 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
         return DiaryError::CryptoError;
     }
 
-    const QString saltKey = "crypto_salt";
+    const QString saltKey = "crypto_salt"; // todo: change to dynamic instead of hardcoded
     QByteArray salt = dbManager.getConfigValue(saltKey);
     if(salt.isEmpty()){
         qDebug()<<"New vault Detected. generating new salt\n";
@@ -88,6 +88,7 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
     QByteArray titleEncrypted = encManager.encryptString(title,masterKey);
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 timeStamp = QDateTime::currentSecsSinceEpoch();
+    // todo: link journal name here instead of 'Hardcoded journal'
     int64_t insertedId = dbManager.insertEntry("Hardcoded journal",timeStamp,titleEncrypted,contentEncrypted);
     return insertedId;
 }
@@ -132,7 +133,7 @@ QString DiaryManager::readEntryContent(int64_t id){
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 updatedAt = QDateTime::currentSecsSinceEpoch();
 
-    //using hardcoded database name:
+    //todo: insert journal name here instead of hardcoded journal
     if(!dbManager.updateEntry(id,"Hardcoded journal",updatedAt,titleEncrypted,contentEncrypted)){
         return DiaryError::DatabaseError;
     }

@@ -73,6 +73,9 @@ public:
     [[nodiscard]] DiaryError deleteEntry(const int64_t id);
 
 private:
+    // store here directly journal_name so that it utilized by other methords
+    QString journal_name; 
+
     SecureVector masterKey;
     // std::vector<uint8_t> masterKey;
     DatabaseManager dbManager;
