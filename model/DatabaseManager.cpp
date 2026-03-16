@@ -199,6 +199,5 @@ std::vector<EntryMetadata> DatabaseManager::getAllEntriesMetadata(){
 bool DatabaseManager::updateJournalName(const QString& newJournal_name){
     // Todo: sql query to update journal name
     QSqlQuery query;
-    query.prepare()
     return true;
 }
