@@ -16,7 +16,7 @@ public:
 
     QByteArray generateSalt();
 
-    SecureVector deriveMasterKey(const std::string& password, const QByteArray& salt);
+    SecureVector deriveMasterKey(const SecureString& password, const QByteArray& salt);
 
     QByteArray encryptString(const QString& inputString, const SecureVector& masterKey);
     QString decryptString(const QByteArray& inputBytes, const SecureVector& masterkey);

@@ -26,6 +26,9 @@ public:
     bool deleteEntry(const qint64 id);
     bool updateEntry(const qint64 id, const QString& journal_name, const qint64 updated_at, const QByteArray& encrypted_title, const QByteArray& encrypted_content);
 
+
+    bool updateJournalName(const QString& newJournal_name);
+
     QByteArray getConfigValue(const QString& key) const;
     std::vector<EntryMetadata> getAllEntriesMetadata();
     QByteArray getEntryContent(int64_t id) const;

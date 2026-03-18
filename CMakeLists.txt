@@ -95,6 +95,7 @@ qt_add_executable(appDCharVault
 set(APP_QML_FILES
     Main.qml
     ui/common/login.qml
+   # ui/common/loginView.qml 
     ui/common/about.qml
 )
 

@@ -195,3 +195,9 @@ std::vector<EntryMetadata> DatabaseManager::getAllEntriesMetadata(){
     qDebug() << "Success: Entry metadata fetched! Count:" << eMeta.size();
     return eMeta;
 }
+
+bool DatabaseManager::updateJournalName(const QString& newJournal_name){
+    // Todo: sql query to update journal name
+    QSqlQuery query;
+    return true;
+}
