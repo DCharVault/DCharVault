@@ -60,7 +60,7 @@ public:
     DiaryManager() = default;
     
     // The worker function: Called later when the user interacts with the UI.
-    [[nodiscard]] DiaryError openDiary(const QString& path, const std::string& password);
+    [[nodiscard]] DiaryError openDiary(const QString& path, const SecureString& password);
 
     std::vector<DiaryEntrySummary> readEntrySummaries();
     QString readEntryContent(int64_t id);
@@ -73,6 +73,8 @@ public:
     [[nodiscard]] DiaryError deleteEntry(const int64_t id);
 
 private:
+    // store here directly journal_name so that it utilized by other methords
+    QString journal_name; 
     SecureVector masterKey;
     // std::vector<uint8_t> masterKey;
     DatabaseManager dbManager;

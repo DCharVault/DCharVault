@@ -19,7 +19,7 @@ QByteArray EncryptionManager::generateSalt(){
     return salt;
 }
 
-SecureVector EncryptionManager::deriveMasterKey(const std::string &password, const QByteArray &salt)
+SecureVector EncryptionManager::deriveMasterKey(const SecureString &password, const QByteArray &salt)
 {
     SecureVector key(crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
     if(crypto_pwhash(key.data(),key.size(),

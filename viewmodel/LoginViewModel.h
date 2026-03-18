@@ -5,6 +5,8 @@
 #include<QObject>
 #include<QString>
 
+class SecurePasswordInput;
+
 class LoginViewModel : public QObject{
     Q_OBJECT
 
@@ -12,7 +14,7 @@ public:
     explicit LoginViewModel(DiaryManager& manager,QObject *parent=nullptr);
 
     // Q_INVOKABLE makes this function callable directly from QML button onClicked
-    Q_INVOKABLE void attemptLogin(const QString& password);
+    Q_INVOKABLE void authenticate(SecurePasswordInput* passwordField, const QString& dbUrl);
 
 signals:
     // Emitted to tell QML to transition to the Home Screen
@@ -20,6 +22,7 @@ signals:
     // Emitted to tell QML to show a red error text box
     void loginFailed();
 
+    void dbNotFound();
 
 private:
     DiaryManager& m_diaryManager;
