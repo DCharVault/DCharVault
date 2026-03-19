@@ -4,14 +4,16 @@
 #include<QDebug>
 #include<QDateTime>
 
-// --- Helpers ---
 DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
     auto it = idToIndex.find(id);
     if(it == idToIndex.end()) return nullptr;
     return &entries[it->second];
 }
 
-// --- Core Features ---
+bool DiaryManager::isVaultOpened() const{
+    return !masterKey.empty();
+}
+
 [[nodiscard]] DiaryError DiaryManager::openDiary(const QString& path, const SecureString& password) {
     if(!dbManager.databaseInit(path)){
         return DiaryError::DatabaseOpenError;
@@ -40,6 +42,29 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
     if(masterKey.empty()){
         return DiaryError::AuthenticationFailed;
     }
+    const QString verifyKey = "verification_block";
+    QByteArray encryptedVerifyBlock = dbManager.getConfigValue(verifyKey);
+    if(encryptedVerifyBlock.isEmpty()){
+        // brand new vault: generate a new random value for verification
+        qDebug() << "New vault. Generating randomized verification block...";
+        QString randomText = encManager.generateRandomBytes(32).toHex(); // why convert to hex from qbytearray
+        QByteArray newBlock = encManager.encryptString(randomText,masterKey);
+        if(!dbManager.setConfigValue(verifyKey,newBlock)){
+            masterKey.clear();
+            return DiaryError::DatabaseError;
+        }
+    }else{
+        // existing vault-> check MAC first
+        qDebug() << "Testing Master Key against verification block...";
+        QString decryptedText = encManager.decryptString(encryptedVerifyBlock,masterKey);
+        if(decryptedText.isEmpty()){
+            qCritical() << "Fatal: Incorrect Master Password! MAC Verification failed.";
+            masterKey.clear();
+            return DiaryError::AuthenticationFailed;
+        }
+        qDebug() << "Success: Password is mathematically correct. Vault Unlocked.";
+    }
+
     qDebug() << "Success: Vault unlocked and Master Key securely loaded in memory.";
     // read bytes into encryption manager salt array from database manager call dbManager.getConfigValue()
     return DiaryError::None;

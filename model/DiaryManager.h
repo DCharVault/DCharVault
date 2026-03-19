@@ -72,15 +72,15 @@ public:
     [[nodiscard]] DiaryError updateEntry(const int64_t id, const QString& title, const QString& content);
     [[nodiscard]] DiaryError deleteEntry(const int64_t id);
 
+    bool isVaultOpened() const;
+
 private:
-    // store here directly journal_name so that it utilized by other methords
     QString journal_name; 
     SecureVector masterKey;
-    // std::vector<uint8_t> masterKey;
     DatabaseManager dbManager;
     EncryptionManager encManager;
 
-    // constructors functions
+    // constructor functions
     [[nodiscard]] DiaryError loadFromDisk();
     std::vector<DiaryEntrySummary> loadAllMetadata();
 

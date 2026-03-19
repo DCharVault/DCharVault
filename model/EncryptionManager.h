@@ -21,6 +21,9 @@ public:
     QByteArray encryptString(const QString& inputString, const SecureVector& masterKey);
     QString decryptString(const QByteArray& inputBytes, const SecureVector& masterkey);
 
+    // generates secure randombytes
+    QByteArray generateRandomBytes(size_t length = 32);
+
 private:
 };
 
