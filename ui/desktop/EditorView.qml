@@ -59,7 +59,8 @@ Page {
         id: deleteAction
         text: "delete"
         shortcut: StandardKey.Delete
-        enabled: root.currentEntryId!=-1 // only when we have a entry not blanked
+        enabled: root.currentEntryId!=-1 && editorArea.text!=="[[encryption failed]]"// only when we have a entry not blanked and text is [[encryption failed]]
+
         onTriggered: {
             console.log("QML: Requesting deletion of ID:", root.currentEntryId)
             deleteConfirmDialog.open()

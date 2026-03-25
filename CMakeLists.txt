@@ -103,6 +103,7 @@ set(APP_QML_FILES
 if(ANDROID)
     list(APPEND APP_QML_FILES
         ui/android/EditorView.qml
+        ui/common/AndroidLogin.qml
         # ui/android/EditorToolbar.qml
         ui/android/SidebarView.qml
         ui/android/HomeView.qml
@@ -113,6 +114,7 @@ else()
         ui/desktop/EditorToolbar.qml
         ui/desktop/SidebarView.qml
         ui/desktop/HomeView.qml
+        ui/common/AndroidLogin.qml
     )
 endif()
 

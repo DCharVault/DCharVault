@@ -19,6 +19,13 @@ QByteArray EncryptionManager::generateSalt(){
     return salt;
 }
 
+QByteArray EncryptionManager::generateRandomBytes(size_t length){
+    QByteArray buffer;
+    buffer.resize(length);
+    randombytes_buf(buffer.data(),length);
+    return buffer;
+}
+
 SecureVector EncryptionManager::deriveMasterKey(const SecureString &password, const QByteArray &salt)
 {
     SecureVector key(crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
