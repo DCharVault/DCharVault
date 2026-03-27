@@ -3,6 +3,9 @@
 
 #include<QDebug>
 #include<QDateTime>
+#include<string>
+#include<QString>
+#include"TitleGenerators.h"
 
 DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
     auto it = idToIndex.find(id);
@@ -110,7 +113,22 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
         qCritical()<<"Master Key is Empty! can't create a new entry to this journal";
         return -1;
     }
-    QByteArray titleEncrypted = encManager.encryptString(title,masterKey);
+    if(title.isEmpty() && content.isEmpty()){
+        qCritical()<<"Cannot Have Anything to Save in Entry";
+        return -1;
+    }
+
+    QByteArray titleEncrypted;
+    if(title.isEmpty()){
+        const std::string contentStr = content.toStdString();
+        size_t len = std::min(contentStr.size(),(size_t)16);
+        const std::string contentHead = contentStr.substr(0,len);
+        QString newTitle = QString::fromStdString(TitleGenerator::generatorEntryTitle(contentHead));
+        titleEncrypted = encManager.encryptString(newTitle,masterKey);
+    }
+    else{
+        titleEncrypted = encManager.encryptString(title,masterKey);
+    }
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 timeStamp = QDateTime::currentSecsSinceEpoch();
     // todo: link journal name here instead of 'Hardcoded journal'
@@ -154,7 +172,24 @@ QString DiaryManager::readEntryContent(int64_t id){
         qCritical()<<"Master Key is Empty! Cannot update entry";
         return DiaryError::MasterKeyNotFound;
     }
-    QByteArray titleEncrypted = encManager.encryptString(title,masterKey);
+
+    if(title.isEmpty() && content.isEmpty()){
+        qCritical()<<"Cannot Have Anything to Save in Entry";
+        return DiaryError::None;
+    }
+
+    QByteArray titleEncrypted;
+    if(title.isEmpty()){
+        const std::string contentStr = content.toStdString();
+        size_t len = std::min(contentStr.size(),(size_t)16);
+        const std::string contentHead = contentStr.substr(0,len);
+        QString newTitle = QString::fromStdString(TitleGenerator::generatorEntryTitle(contentHead));
+        titleEncrypted = encManager.encryptString(newTitle,masterKey);
+    }
+    else{
+        titleEncrypted = encManager.encryptString(title,masterKey);
+    }
+
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 updatedAt = QDateTime::currentSecsSinceEpoch();
 

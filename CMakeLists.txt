@@ -126,23 +126,28 @@ qt_add_qml_module(appDCharVault
     SOURCES
         model/DiaryEntry.h
         model/DiaryManager.h
+        model/DatabaseManager.h
+        model/EncryptionManager.h
+        model/TitleGenerators.h
+        model/SecureAllocator.h
+
         model/DiaryEntry.cpp
         model/VaultModel.cpp
-        viewmodel/LoginViewModel.cpp
         model/DiaryManager.cpp
-        SOURCES model/DatabaseManager.cpp
-        SOURCES model/DatabaseManager.h
-        SOURCES model/EncryptionManager.h
-        SOURCES model/EncryptionManager.cpp
-        SOURCES viewmodel/LoginViewModel.h
+        model/DatabaseManager.cpp
+        model/EncryptionManager.cpp
 
-        SOURCES viewmodel/DiaryViewModel.h
-        SOURCES viewmodel/DiaryViewModel.cpp
-        SOURCES viewmodel/DiaryListModel.h
-        SOURCES viewmodel/DiaryListModel.cpp
-        SOURCES model/SecureAllocator.h
-        SOURCES viewmodel/SecurePasswordInput.h
-        SOURCES viewmodel/SecurePasswordInput.cpp
+
+        viewmodel/SecurePasswordInput.h
+        viewmodel/DiaryListModel.h
+        viewmodel/LoginViewModel.h
+        viewmodel/DiaryViewModel.h
+
+        viewmodel/LoginViewModel.cpp
+        viewmodel/DiaryViewModel.cpp
+        viewmodel/DiaryListModel.cpp
+        viewmodel/SecurePasswordInput.cpp
+
 )
 
 
