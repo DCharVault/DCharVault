@@ -51,8 +51,19 @@ jobs:
         mkdir -p appdir/usr/share/applications
         mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
         
-        # Locate the compiled binary (ignoring directories) and copy it
-        EXEC_PATH=$(find build -type f -executable -iname "dcharvault" | head -n 1)
+        # Print out the build directory contents for debugging just in case
+        echo "--- COMPILED EXECUTABLES IN BUILD FOLDER ---"
+        find build -type f -executable | grep -v "CMakeFiles" || true
+        echo "--------------------------------------------"
+        
+        # Hunt down the executable using wildcards in case Qt named it 'appDCharVault'
+        EXEC_PATH=$(find build -type f -executable -iname "*dcharvault*" | grep -v "CMakeFiles" | head -n 1)
+        
+        if [ -z "$EXEC_PATH" ]; then
+          echo "Error: Executable still not found! Check the debug list above."
+          exit 1
+        fi
+        
         echo "Found executable at: $EXEC_PATH"
         cp "$EXEC_PATH" appdir/usr/bin/DCharVault
         
@@ -70,7 +81,6 @@ jobs:
         touch appdir/usr/share/icons/hicolor/256x256/apps/dcharvault.png
         
         # Run linuxdeployqt to bundle libsodium, Qt, and create the AppImage
-        # Using -unsupported-allow-new-glibc because ubuntu-latest uses a very new glibc
         export VERSION=latest
         ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/dcharvault.desktop -appimage -unsupported-allow-new-glibc
     
