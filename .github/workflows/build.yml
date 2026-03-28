@@ -16,7 +16,7 @@ jobs:
   # JOB 1: LINUX (Ubuntu) - Qt 6.8.2 LTS
   build-linux:
     name: 🐧 Linux (Ubuntu)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
+        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config file wget
 
     - name: Install Qt 6.8.2
       uses: jurplel/install-qt-action@v3
@@ -40,9 +40,8 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Package Linux (AppImage)
+    - name: Package Linux AppImage
       run: |
-        # Download linuxdeployqt
         wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
         chmod a+x linuxdeployqt-continuous-x86_64.AppImage
         
@@ -51,23 +50,17 @@ jobs:
         mkdir -p appdir/usr/share/applications
         mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
         
-        # Print out the build directory contents for debugging just in case
-        echo "--- COMPILED EXECUTABLES IN BUILD FOLDER ---"
-        find build -type f -executable | grep -v "CMakeFiles" || true
-        echo "--------------------------------------------"
-        
-        # Hunt down the executable using wildcards in case Qt named it 'appDCharVault'
-        EXEC_PATH=$(find build -type f -executable -iname "*dcharvault*" | grep -v "CMakeFiles" | head -n 1)
-        
+        # Find executable
+        EXEC_PATH=$(find build -type f -executable -iname "*dcharvault*" ! -path "*/CMakeFiles/*" | head -n 1)
         if [ -z "$EXEC_PATH" ]; then
-          echo "Error: Executable still not found! Check the debug list above."
+          echo "Error: Executable not found!"
           exit 1
         fi
         
         echo "Found executable at: $EXEC_PATH"
         cp "$EXEC_PATH" appdir/usr/bin/DCharVault
         
-        # Create a basic desktop file (Required for AppImage)
+        # Create a basic desktop file
         cat <<EOF > appdir/usr/share/applications/dcharvault.desktop
         [Desktop Entry]
         Name=DCharVault
@@ -77,20 +70,21 @@ jobs:
         Categories=Utility;
         EOF
         
-        # Create a dummy icon file to satisfy linuxdeployqt
-        touch appdir/usr/share/icons/hicolor/256x256/apps/dcharvault.png
+        # Create a valid minimal PNG icon to satisfy linuxdeployqt
+        # A 1x1 transparent PNG file hex code
+        echo -ne '\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x0b\x49\x44\x41\x54\x08\xd7\x63\x60\x00\x02\x00\x00\x05\x00\x01\xe2\x26\x05\x9b\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82' > appdir/usr/share/icons/hicolor/256x256/apps/dcharvault.png
         
         # Run linuxdeployqt to bundle libsodium, Qt, and create the AppImage
         export VERSION=latest
-        ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/dcharvault.desktop -appimage -unsupported-allow-new-glibc
-    
-    - name: Upload Linux Artifact
+        ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/dcharvault.desktop -appimage -qmldir=ui -unsupported-allow-new-glibc
+
+    - name: Upload Linux AppImage
       uses: actions/upload-artifact@v4
       with:
         name: DCharVault-Linux
-        path: DCharVault-*.AppImage
-        retention-days: 1
-      
+        path: "*.AppImage"
+        if-no-files-found: error
+        retention-days: 7
 
 
   # JOB 2: WINDOWS (MSVC) - Qt 6.8.2 LTS
@@ -122,34 +116,39 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Package Windows (windeployqt)
+    - name: Package Windows Artifact
+      shell: pwsh
       run: |
-        mkdir deploy
+        $exePath = Get-ChildItem -Path build -Recurse -Filter "*dcharvault*.exe" | Select-Object -First 1
+        if (-not $exePath) {
+          Write-Error "Executable not found!"
+          exit 1
+        }
         
-        # Hunt down the executable wherever CMake hid it
-        $exeFile = Get-ChildItem -Path build -Recurse -Filter "DCharVault.exe" | Select-Object -First 1
-        $exePath = $exeFile.FullName
-        Write-Host "Found executable at: $exePath"
+        $deployDir = "deploy"
+        New-Item -ItemType Directory -Force -Path $deployDir
         
-        # Find the folder the exe is in, so we can grab the vcpkg DLLs next to it
-        $exeDir = Split-Path $exePath
+        Copy-Item $exePath.FullName -Destination $deployDir
         
-        # Copy the executable and any associated DLLs (like libsodium)
-        Copy-Item -Path $exePath -Destination deploy\
-        Copy-Item -Path "$exeDir\*.dll" -Destination deploy\ -ErrorAction SilentlyContinue
+        # Run windeployqt
+        windeployqt --qmldir ui "$deployDir\$($exePath.Name)"
         
-        # Run windeployqt to pull in all required Qt DLLs
-        windeployqt deploy\DCharVault.exe
-
-    - name: Zip Deployment Folder
-      run: Compress-Archive -Path deploy\* -DestinationPath DCharVault-Windows.zip
+        # Copy Libsodium DLL
+        $sodiumDll = Get-ChildItem -Path "${{ github.workspace }}\vcpkg_installed\x64-windows\bin" -Filter "libsodium.dll" -Recurse | Select-Object -First 1
+        if ($sodiumDll) {
+          Copy-Item $sodiumDll.FullName -Destination $deployDir
+        } else {
+          Write-Warning "libsodium.dll not found!"
+        }
 
     - name: Upload Windows Artifact
       uses: actions/upload-artifact@v4
       with:
         name: DCharVault-Windows
-        path: DCharVault-Windows.zip
-        retention-days: 1
+        path: deploy/
+        if-no-files-found: error
+        retention-days: 7
+
       
   # JOB 3: ANDROID (ARM64) - Qt 6.8.2 LTS
   build-android:
@@ -167,7 +166,6 @@ jobs:
         java-version: '17'
 
     - name: Install System Tools
-    
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential tar curl zip unzip autoconf autoconf-archive automake libtool
@@ -205,14 +203,13 @@ jobs:
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
         
-
     # 3.5 Generate Android Keystore for Release Signing
     - name: Generate Keystore
       run: |
         keytool -genkey -v -keystore release.keystore -alias vaultkey -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=Vault,O=Dev,C=US"
         echo "KEYSTORE_PATH=$PWD/release.keystore" >> $GITHUB_ENV
 
-  # 4. Configure CMake (RELEASE MODE)
+    # 4. Configure CMake (RELEASE MODE)
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.2/gcc_64 
@@ -239,4 +236,4 @@ jobs:
         name: DCharVault-Android
         path: build/**/*.apk
         if-no-files-found: error
-        retention-days: 1
+        retention-days: 7
