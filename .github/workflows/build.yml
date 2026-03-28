@@ -16,7 +16,7 @@ jobs:
   # JOB 1: LINUX (Ubuntu) - Qt 6.8.2 LTS
   build-linux:
     name: 🐧 Linux (Ubuntu)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
+        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config file wget patchelf
 
     - name: Install Qt 6.8.2
       uses: jurplel/install-qt-action@v3
@@ -39,6 +39,77 @@ jobs:
 
     - name: Build
       run: cmake --build build --config Release
+
+    - name: Package Linux App (Manual Bundle)
+      run: |
+        # This completely avoids third-party deployment tools like linuxdeployqt.
+        # It creates an isolated environment, copying only what is needed,
+        # which you can fully audit here.
+        
+        # 1. Setup deployment directory
+        APPDIR="DCharVault-Linux"
+        mkdir -p $APPDIR/lib
+        mkdir -p $APPDIR/plugins
+        mkdir -p $APPDIR/qml
+        
+        # 2. Find and copy your executable
+        EXEC_PATH=$(find build -type f -executable -iname "*dcharvault*" ! -path "*/CMakeFiles/*" | head -n 1)
+        if [ -z "$EXEC_PATH" ]; then
+          echo "Error: Executable not found!"
+          exit 1
+        fi
+        
+        echo "Found executable at: $EXEC_PATH"
+        cp "$EXEC_PATH" $APPDIR/DCharVault
+        
+        # 3. Patch the RPATH to force it to load libraries from its own 'lib' directory
+        # This ensures the user's system libraries don't interfere, providing portability.
+        patchelf --set-rpath '$ORIGIN/lib:$ORIGIN/plugins:$ORIGIN' $APPDIR/DCharVault
+        
+        # 4. Copy required Qt 6 Libraries (Core, Gui, Widgets, Sql, Quick, etc.)
+        QT_LIB_DIR="/home/runner/work/DCharVault/Qt/6.8.2/gcc_64/lib"
+        cp -d $QT_LIB_DIR/libQt6Core.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Gui.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Widgets.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Sql.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Network.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Qml.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Quick.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6QuickControls2.so* $APPDIR/lib/
+        
+        # Note: The 'icudata', 'icui18n', and 'icuuc' libraries are often required by Qt Core
+        cp -d $QT_LIB_DIR/libicu*.so* $APPDIR/lib/ || true
+        
+        # 5. Copy System Libraries (libsodium)
+        cp /usr/lib/x86_64-linux-gnu/libsodium.so* $APPDIR/lib/
+        
+        # 6. Copy essential Qt Plugins
+        QT_PLUGIN_DIR="/home/runner/work/DCharVault/Qt/6.8.2/gcc_64/plugins"
+        mkdir -p $APPDIR/plugins/platforms
+        cp -d $QT_PLUGIN_DIR/platforms/libqxcb.so $APPDIR/plugins/platforms/
+        
+        mkdir -p $APPDIR/plugins/sqldrivers
+        cp -d $QT_PLUGIN_DIR/sqldrivers/libqsqlite.so $APPDIR/plugins/sqldrivers/ || true
+        
+        # 7. Create an explicit qt.conf file to tell the executable where plugins are
+        cat <<EOF > $APPDIR/qt.conf
+        [Paths]
+        Prefix = .
+        Plugins = plugins
+        Imports = qml
+        Qml2Imports = qml
+        EOF
+        
+        # 8. Compress the application into a standard tarball
+        tar -czvf DCharVault-Linux-x86_64.tar.gz $APPDIR/
+
+    - name: Upload Linux App Tarball
+      uses: actions/upload-artifact@v4
+      with:
+        name: DCharVault-Linux
+        path: "*.tar.gz"
+        if-no-files-found: error
+        retention-days: 7
 
 
   # JOB 2: WINDOWS (MSVC) - Qt 6.8.2 LTS
@@ -69,6 +140,41 @@ jobs:
 
     - name: Build
       run: cmake --build build --config Release
+
+    - name: Package Windows Artifact
+      shell: pwsh
+      run: |
+        $exePath = Get-ChildItem -Path build -Recurse -Filter "*dcharvault*.exe" | Select-Object -First 1
+        if (-not $exePath) {
+          Write-Error "Executable not found!"
+          exit 1
+        }
+        
+        $deployDir = "DCharVault-Windows"
+        New-Item -ItemType Directory -Force -Path $deployDir
+        
+        Copy-Item $exePath.FullName -Destination $deployDir
+        
+        # Note: windeployqt is a 1st-party official Qt deployment tool provided by The Qt Company.
+        # It reads your executable and copies only the Qt .dlls that your app requires.
+        windeployqt --qmldir ui "$deployDir\$($exePath.Name)"
+        
+        # Copy Libsodium DLL
+        $sodiumDll = Get-ChildItem -Path "${{ github.workspace }}\vcpkg_installed\x64-windows\bin" -Filter "libsodium.dll" -Recurse | Select-Object -First 1
+        if ($sodiumDll) {
+          Copy-Item $sodiumDll.FullName -Destination $deployDir
+        } else {
+          Write-Warning "libsodium.dll not found!"
+        }
+
+    - name: Upload Windows Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DCharVault-Windows
+        path: DCharVault-Windows/
+        if-no-files-found: error
+        retention-days: 7
+
       
   # JOB 3: ANDROID (ARM64) - Qt 6.8.2 LTS
   build-android:
@@ -86,7 +192,6 @@ jobs:
         java-version: '17'
 
     - name: Install System Tools
-    
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential tar curl zip unzip autoconf autoconf-archive automake libtool
@@ -124,14 +229,13 @@ jobs:
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
         
-
     # 3.5 Generate Android Keystore for Release Signing
     - name: Generate Keystore
       run: |
         keytool -genkey -v -keystore release.keystore -alias vaultkey -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=Vault,O=Dev,C=US"
         echo "KEYSTORE_PATH=$PWD/release.keystore" >> $GITHUB_ENV
 
-  # 4. Configure CMake (RELEASE MODE)
+    # 4. Configure CMake (RELEASE MODE)
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.2/gcc_64 
@@ -158,4 +262,4 @@ jobs:
         name: DCharVault-Android
         path: build/**/*.apk
         if-no-files-found: error
-        retention-days: 1
+        retention-days: 7
