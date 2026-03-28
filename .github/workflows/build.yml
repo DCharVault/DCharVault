@@ -51,8 +51,10 @@ jobs:
         mkdir -p appdir/usr/share/applications
         mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
         
-        # Copy the compiled binary
-        cp build/DCharVault appdir/usr/bin/
+        # Locate the compiled binary (ignoring directories) and copy it
+        EXEC_PATH=$(find build -type f -executable -iname "dcharvault" | head -n 1)
+        echo "Found executable at: $EXEC_PATH"
+        cp "$EXEC_PATH" appdir/usr/bin/DCharVault
         
         # Create a basic desktop file (Required for AppImage)
         cat <<EOF > appdir/usr/share/applications/dcharvault.desktop
@@ -71,7 +73,7 @@ jobs:
         # Using -unsupported-allow-new-glibc because ubuntu-latest uses a very new glibc
         export VERSION=latest
         ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/dcharvault.desktop -appimage -unsupported-allow-new-glibc
-
+    
     - name: Upload Linux Artifact
       uses: actions/upload-artifact@v4
       with:
@@ -113,8 +115,20 @@ jobs:
     - name: Package Windows (windeployqt)
       run: |
         mkdir deploy
-        Copy-Item -Path build\Release\*.exe -Destination deploy\
-        Copy-Item -Path build\Release\*.dll -Destination deploy\ -ErrorAction SilentlyContinue
+        
+        # Hunt down the executable wherever CMake hid it
+        $exeFile = Get-ChildItem -Path build -Recurse -Filter "DCharVault.exe" | Select-Object -First 1
+        $exePath = $exeFile.FullName
+        Write-Host "Found executable at: $exePath"
+        
+        # Find the folder the exe is in, so we can grab the vcpkg DLLs next to it
+        $exeDir = Split-Path $exePath
+        
+        # Copy the executable and any associated DLLs (like libsodium)
+        Copy-Item -Path $exePath -Destination deploy\
+        Copy-Item -Path "$exeDir\*.dll" -Destination deploy\ -ErrorAction SilentlyContinue
+        
+        # Run windeployqt to pull in all required Qt DLLs
         windeployqt deploy\DCharVault.exe
 
     - name: Zip Deployment Folder
