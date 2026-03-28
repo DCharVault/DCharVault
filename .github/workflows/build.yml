@@ -40,6 +40,46 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
+    - name: Package Linux (AppImage)
+      run: |
+        # Download linuxdeployqt
+        wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+        chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+        
+        # Create AppDir structure
+        mkdir -p appdir/usr/bin
+        mkdir -p appdir/usr/share/applications
+        mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
+        
+        # Copy the compiled binary
+        cp build/DCharVault appdir/usr/bin/
+        
+        # Create a basic desktop file (Required for AppImage)
+        cat <<EOF > appdir/usr/share/applications/dcharvault.desktop
+        [Desktop Entry]
+        Name=DCharVault
+        Exec=DCharVault
+        Icon=dcharvault
+        Type=Application
+        Categories=Utility;
+        EOF
+        
+        # Create a dummy icon file to satisfy linuxdeployqt
+        touch appdir/usr/share/icons/hicolor/256x256/apps/dcharvault.png
+        
+        # Run linuxdeployqt to bundle libsodium, Qt, and create the AppImage
+        # Using -unsupported-allow-new-glibc because ubuntu-latest uses a very new glibc
+        export VERSION=latest
+        ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/dcharvault.desktop -appimage -unsupported-allow-new-glibc
+
+    - name: Upload Linux Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DCharVault-Linux
+        path: DCharVault-*.AppImage
+        retention-days: 1
+      
+
 
   # JOB 2: WINDOWS (MSVC) - Qt 6.8.2 LTS
   build-windows:
@@ -69,6 +109,23 @@ jobs:
 
     - name: Build
       run: cmake --build build --config Release
+
+    - name: Package Windows (windeployqt)
+      run: |
+        mkdir deploy
+        Copy-Item -Path build\Release\*.exe -Destination deploy\
+        Copy-Item -Path build\Release\*.dll -Destination deploy\ -ErrorAction SilentlyContinue
+        windeployqt deploy\DCharVault.exe
+
+    - name: Zip Deployment Folder
+      run: Compress-Archive -Path deploy\* -DestinationPath DCharVault-Windows.zip
+
+    - name: Upload Windows Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DCharVault-Windows
+        path: DCharVault-Windows.zip
+        retention-days: 1
       
   # JOB 3: ANDROID (ARM64) - Qt 6.8.2 LTS
   build-android:
