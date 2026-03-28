@@ -17,6 +17,7 @@ Page {
 
     property int colorMode: 0 // 0 == text color, 1 == highlight color
     property int currentEntryId: -1
+    property string originalTitle: ""
 
     // --- API ---
     property alias entryTitle: titleField.text
@@ -25,11 +26,13 @@ Page {
 
     Connections{
         target: diaryViewModel
-        function onEntrySavedSuccessfully(savedId){
+        function onEntrySavedSuccessfully(savedId, finalizeTitle){
             console.log("QML: Success! Entry locked and saved in SQLite.")
             diaryListModel.loadEntries()
             root.currentEntryId = savedId
             editorArea.textDocument.modified = false
+            titleField.text = finalizeTitle
+            originalTitle = finalizeTitle
         }
         function onEntrySaveFailed(errorMessage){
             console.error("QML Error: " + errorMessage)
@@ -48,11 +51,13 @@ Page {
         id: saveAction
         text: "Save"
         shortcut: StandardKey.Save // ctrl+S
-        enabled: editorArea.textDocument.modified
+        enabled: editorArea.textDocument.modified || titleField.text!==originalTitle
         onTriggered: {
             console.log("QML: Sending entry to viewModel: diaryViewModel.cpp");
             console.log("CRITICAL DEBUG -> Hitting Save! currentEntryId is:", root.currentEntryId);
             diaryViewModel.saveNewEntry(root.currentEntryId,titleField.text,editorArea.text);
+            originalTitle = titleField.text
+            editorArea.textDocument.modified = false
         }
     }
     Action{
@@ -193,6 +198,7 @@ Page {
                 background: null
                 selectByMouse: true
                 padding: 0
+
             }
 
             Rectangle {

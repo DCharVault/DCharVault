@@ -2,6 +2,8 @@
 #include <algorithm>
 
 #include<QDebug>
+
+#include<QTextDocument>
 #include<QDateTime>
 #include<string>
 #include<QString>
@@ -120,7 +122,11 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
 
     QByteArray titleEncrypted;
     if(title.isEmpty()){
-        const std::string contentStr = content.toStdString();
+        QString htmlChunk = content.left(1024);
+        QTextDocument textDoc;
+        textDoc.setHtml(htmlChunk);
+        QString textClean = textDoc.toPlainText().simplified();
+        const std::string contentStr = textClean.toStdString();
         size_t len = std::min(contentStr.size(),(size_t)16);
         const std::string contentHead = contentStr.substr(0,len);
         QString newTitle = QString::fromStdString(TitleGenerator::generatorEntryTitle(contentHead));
@@ -144,6 +150,23 @@ const DiaryEntry* DiaryManager::readEntry(const int64_t id) const noexcept {
     auto it = idToIndex.find(id);
     if(it == idToIndex.end()) return nullptr;
     return &entries[it->second];
+}
+
+QString DiaryManager::readEntryTitle(int64_t id){
+    if(masterKey.empty()){
+        qCritical() << "Fatal: Master Key is empty. Cannot decrypt content.";
+        return "";
+    }
+    QByteArray encryptedTitle = dbManager.getEntryTitle(id);
+    if(encryptedTitle.isEmpty()){
+        return "";
+    }
+    QString decryptedTitle = encManager.decryptString(encryptedTitle,masterKey);
+    if(decryptedTitle.isEmpty() && !encryptedTitle.isEmpty()){
+        qCritical() << "Warning: Failed to decrypt title for entry ID:" << id;
+        return "[[ Decryption Failed - Data Corrupted ]]";
+    }
+    return decryptedTitle;
 }
 
 QString DiaryManager::readEntryContent(int64_t id){
@@ -180,7 +203,11 @@ QString DiaryManager::readEntryContent(int64_t id){
 
     QByteArray titleEncrypted;
     if(title.isEmpty()){
-        const std::string contentStr = content.toStdString();
+        QString htmlChunk = content.left(1024);
+        QTextDocument textDoc;
+        textDoc.setHtml(htmlChunk);
+        QString textClean = textDoc.toPlainText().simplified();
+        const std::string contentStr = textClean.toStdString();
         size_t len = std::min(contentStr.size(),(size_t)16);
         const std::string contentHead = contentStr.substr(0,len);
         QString newTitle = QString::fromStdString(TitleGenerator::generatorEntryTitle(contentHead));

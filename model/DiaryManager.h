@@ -64,6 +64,7 @@ public:
 
     std::vector<DiaryEntrySummary> readEntrySummaries();
     QString readEntryContent(int64_t id);
+    QString readEntryTitle(int64_t id);
     // const std::vector<DiaryEntry>& readEntries() const noexcept;
     const DiaryEntry* readEntry(const int64_t id) const noexcept;
     // This is "Handle-based access" and is much safer for vectors.
