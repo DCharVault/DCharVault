@@ -24,7 +24,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config file wget
+        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config file wget patchelf
 
     - name: Install Qt 6.8.2
       uses: jurplel/install-qt-action@v3
@@ -40,17 +40,19 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Package Linux AppImage
+    - name: Package Linux App (Manual Bundle)
       run: |
-        wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
-        chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+        # This completely avoids third-party deployment tools like linuxdeployqt.
+        # It creates an isolated environment, copying only what is needed,
+        # which you can fully audit here.
         
-        # Create AppDir structure
-        mkdir -p appdir/usr/bin
-        mkdir -p appdir/usr/share/applications
-        mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
+        # 1. Setup deployment directory
+        APPDIR="DCharVault-Linux"
+        mkdir -p $APPDIR/lib
+        mkdir -p $APPDIR/plugins
+        mkdir -p $APPDIR/qml
         
-        # Find executable
+        # 2. Find and copy your executable
         EXEC_PATH=$(find build -type f -executable -iname "*dcharvault*" ! -path "*/CMakeFiles/*" | head -n 1)
         if [ -z "$EXEC_PATH" ]; then
           echo "Error: Executable not found!"
@@ -58,31 +60,54 @@ jobs:
         fi
         
         echo "Found executable at: $EXEC_PATH"
-        cp "$EXEC_PATH" appdir/usr/bin/DCharVault
+        cp "$EXEC_PATH" $APPDIR/DCharVault
         
-        # Create a basic desktop file
-        cat <<EOF > appdir/usr/share/applications/dcharvault.desktop
-        [Desktop Entry]
-        Name=DCharVault
-        Exec=DCharVault
-        Icon=dcharvault
-        Type=Application
-        Categories=Utility;
+        # 3. Patch the RPATH to force it to load libraries from its own 'lib' directory
+        # This ensures the user's system libraries don't interfere, providing portability.
+        patchelf --set-rpath '$ORIGIN/lib:$ORIGIN/plugins:$ORIGIN' $APPDIR/DCharVault
+        
+        # 4. Copy required Qt 6 Libraries (Core, Gui, Widgets, Sql, Quick, etc.)
+        QT_LIB_DIR="/home/runner/work/DCharVault/Qt/6.8.2/gcc_64/lib"
+        cp -d $QT_LIB_DIR/libQt6Core.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Gui.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Widgets.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Sql.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Network.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Qml.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6Quick.so* $APPDIR/lib/
+        cp -d $QT_LIB_DIR/libQt6QuickControls2.so* $APPDIR/lib/
+        
+        # Note: The 'icudata', 'icui18n', and 'icuuc' libraries are often required by Qt Core
+        cp -d $QT_LIB_DIR/libicu*.so* $APPDIR/lib/ || true
+        
+        # 5. Copy System Libraries (libsodium)
+        cp /usr/lib/x86_64-linux-gnu/libsodium.so* $APPDIR/lib/
+        
+        # 6. Copy essential Qt Plugins
+        QT_PLUGIN_DIR="/home/runner/work/DCharVault/Qt/6.8.2/gcc_64/plugins"
+        mkdir -p $APPDIR/plugins/platforms
+        cp -d $QT_PLUGIN_DIR/platforms/libqxcb.so $APPDIR/plugins/platforms/
+        
+        mkdir -p $APPDIR/plugins/sqldrivers
+        cp -d $QT_PLUGIN_DIR/sqldrivers/libqsqlite.so $APPDIR/plugins/sqldrivers/ || true
+        
+        # 7. Create an explicit qt.conf file to tell the executable where plugins are
+        cat <<EOF > $APPDIR/qt.conf
+        [Paths]
+        Prefix = .
+        Plugins = plugins
+        Imports = qml
+        Qml2Imports = qml
         EOF
         
-        # Create a valid minimal PNG icon to satisfy linuxdeployqt
-        # A 1x1 transparent PNG file hex code
-        echo -ne '\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x0b\x49\x44\x41\x54\x08\xd7\x63\x60\x00\x02\x00\x00\x05\x00\x01\xe2\x26\x05\x9b\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82' > appdir/usr/share/icons/hicolor/256x256/apps/dcharvault.png
-        
-        # Run linuxdeployqt to bundle libsodium, Qt, and create the AppImage
-        export VERSION=latest
-        ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/dcharvault.desktop -appimage -qmldir=ui -unsupported-allow-new-glibc
+        # 8. Compress the application into a standard tarball
+        tar -czvf DCharVault-Linux-x86_64.tar.gz $APPDIR/
 
-    - name: Upload Linux AppImage
+    - name: Upload Linux App Tarball
       uses: actions/upload-artifact@v4
       with:
         name: DCharVault-Linux
-        path: "*.AppImage"
+        path: "*.tar.gz"
         if-no-files-found: error
         retention-days: 7
 
@@ -125,12 +150,13 @@ jobs:
           exit 1
         }
         
-        $deployDir = "deploy"
+        $deployDir = "DCharVault-Windows"
         New-Item -ItemType Directory -Force -Path $deployDir
         
         Copy-Item $exePath.FullName -Destination $deployDir
         
-        # Run windeployqt
+        # Note: windeployqt is a 1st-party official Qt deployment tool provided by The Qt Company.
+        # It reads your executable and copies only the Qt .dlls that your app requires.
         windeployqt --qmldir ui "$deployDir\$($exePath.Name)"
         
         # Copy Libsodium DLL
@@ -145,7 +171,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: DCharVault-Windows
-        path: deploy/
+        path: DCharVault-Windows/
         if-no-files-found: error
         retention-days: 7
 
