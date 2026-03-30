@@ -82,7 +82,7 @@ private:
     EncryptionManager encManager;
 
     // constructor functions
-    [[nodiscard]] DiaryError loadFromDisk();
+    [[nodiscard]] DiaryError loadFromDisk(const QString& path);
     std::vector<DiaryEntrySummary> loadAllMetadata();
 
     // std::vector<DiaryEntrySummary> summaryCache;  still in disccuesion can sigthly increase Ram cosuption while minimizing cpu overhead

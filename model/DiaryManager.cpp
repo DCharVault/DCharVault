@@ -75,7 +75,7 @@ bool DiaryManager::isVaultOpened() const{
     return DiaryError::None;
 }
 
-[[nodiscard]] DiaryError DiaryManager::loadFromDisk() {
+[[nodiscard]] DiaryError DiaryManager::loadFromDisk(const QString& path) {
     // TODO: Read all rows from dbManager, decrypt them, put them in 'entries' vector.
     return DiaryError::None;
 }
@@ -138,7 +138,8 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 timeStamp = QDateTime::currentSecsSinceEpoch();
     // todo: link journal name here instead of 'Hardcoded journal'
-    int64_t insertedId = dbManager.insertEntry("Hardcoded journal",timeStamp,titleEncrypted,contentEncrypted);
+
+    int64_t insertedId = dbManager.insertEntry(timeStamp,titleEncrypted,contentEncrypted);
     return insertedId;
 }
 
@@ -221,7 +222,7 @@ QString DiaryManager::readEntryContent(int64_t id){
     qint64 updatedAt = QDateTime::currentSecsSinceEpoch();
 
     //todo: insert journal name here instead of hardcoded journal
-    if(!dbManager.updateEntry(id,"Hardcoded journal",updatedAt,titleEncrypted,contentEncrypted)){
+    if(!dbManager.updateEntry(id,updatedAt,titleEncrypted,contentEncrypted)){
         return DiaryError::DatabaseError;
     }
     return DiaryError::None;

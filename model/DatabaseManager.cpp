@@ -41,10 +41,24 @@ bool DatabaseManager::createTable(){
         return false;
     }
 
+    const QString createDiaryMetadataTable = R"(
+                                    CREATE TABLE IF NOT EXISTS journal_meta(
+                                      id INTEGER PRIMARY KEY CHECK (id=1),
+                                      journal_name TEXT NOT NULL,
+                                      created_at INTEGER NOT NULL,
+                                      updated_at INTEGER NOT NULL,
+                                      special_status TEXT NOT NULL,
+                                      shareable_status TEXT NOT NULL
+                                    )
+                                )";
+    if(!query.exec(createDiaryMetadataTable)){
+        qCritical()<<"Failed to create journal_meta: "<<query.lastError().text()<<"\n";
+        return false;
+    }
+
     const QString createDiaryTable = R"(
                                   CREATE TABLE IF NOT EXISTS journal(
                                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    journal_name TEXT NOT NULL,
                                     created_at INTEGER NOT NULL,
                                     updated_at INTEGER NOT NULL,
                                     bookmarked INTEGER DEFAULT 0 NOT NULL,
@@ -126,11 +140,10 @@ QByteArray DatabaseManager::getEntryTitle(int64_t id) const{
     return QByteArray();
 }
 
-qint64 DatabaseManager::insertEntry(const QString &journal_name, const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content){
+qint64 DatabaseManager::insertEntry(const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content){
     QSqlQuery query;
-    query.prepare("INSERT INTO journal(journal_name,created_at,updated_at,encrypted_title,encrypted_content) "
-                  "VALUES(:journal_name,:created_at,:updated_at,:encrypted_title,:encrypted_content)");
-    query.bindValue(":journal_name",journal_name);
+    query.prepare("INSERT INTO journal(created_at,updated_at,encrypted_title,encrypted_content) "
+                  "VALUES(:created_at,:updated_at,:encrypted_title,:encrypted_content)");
     query.bindValue(":created_at",created_at);
     query.bindValue(":updated_at",created_at);
     query.bindValue(":encrypted_title",encrypted_title);
@@ -163,17 +176,15 @@ bool DatabaseManager::deleteEntry(const qint64 id){
     return true;
 }
 
-bool DatabaseManager::updateEntry(const qint64 id, const QString &journal_name, const qint64 updated_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content)
+bool DatabaseManager::updateEntry(const qint64 id,const qint64 updated_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content)
 {
     QSqlQuery query;
     query.prepare("UPDATE journal SET "
-                  "journal_name = :journal_name,"
                   "updated_at = :updated_at,"
                   "encrypted_title = :encrypted_title,"
                   "encrypted_content = :encrypted_content "
                   "WHERE id = :id"
                   );
-    query.bindValue(":journal_name",journal_name);
     query.bindValue(":updated_at",updated_at);
     query.bindValue(":encrypted_title",encrypted_title);
     query.bindValue(":encrypted_content",encrypted_content);
@@ -213,15 +224,24 @@ std::vector<EntryMetadata> DatabaseManager::getAllEntriesMetadata(){
     return eMeta;
 }
 
-bool DatabaseManager::updateJournalName(const QString& newJournal_name){
-    // Todo: sql query to update journal name
+bool DatabaseManager::setJournalName(const QString &newJournal_name, const qint64 updated_at){
     QSqlQuery query;
-    query.prepare("UPDATE journal SET journal_name = :new_journal_name");
-    query.bindValue(":new_journal_name",newJournal_name);
+    query.prepare(R"(
+        INSERT INTO journal_metadata(id,journal_name,created_at,updated_at)
+        VALUES (1,:journal_name,:created_at,:updated_at)
+        ON CONFLICT(id) DO UPDATE SET
+            journal_name = excluded.journal_name
+            updated_at = excluded.updated_at
+    )");
     if(!query.exec()){
-         qCritical() << "Failed to update journal name:" << query.lastError().text();
+        qCritical() << "Failed to set journal name:" << query.lastError().text();
         return false;
     }
-    qDebug() << "Success: Journal Name updated to " << newJournal_name;
+    return true;
+}
+bool DatabaseManager::setShareableStatus(const bool isShareable){
+    return true;
+}
+bool DatabaseManager::setSpecialStatus(const QString &status){
     return true;
 }
