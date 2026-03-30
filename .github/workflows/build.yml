@@ -4,13 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
-    paths:
-      - '**.cpp'
-      - '**.h'
-      - '**.hpp'
-      - '**.qml'
-      - 'CMakeLists.txt'
-      - '.github/workflows/**'
+  pull_request: 
+    branches: [ "main" ]
 
 jobs:
   # JOB 1: LINUX (Ubuntu) - Qt 6.8.2 LTS
