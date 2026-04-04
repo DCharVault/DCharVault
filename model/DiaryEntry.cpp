@@ -1,4 +1,3 @@
 #include "DiaryEntry.h"
 #include<vector>
-
-using DiaryList = std::vector<DiaryEntry>; 
+// still do not know what to do with it-- its a trash of code
