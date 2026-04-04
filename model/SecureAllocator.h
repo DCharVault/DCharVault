@@ -16,7 +16,7 @@ struct SecureAllocator{
 
     template <typename U> // for shapte-shifter 
     //container will try to clone allocator and change its data type from T to U.
-    constexpr SecureAllocator(const SecureAllocator<U>&) noexcept{} // a hole tube like constructor
+    constexpr SecureAllocator(const SecureAllocator<U>&) noexcept{} 
 
     // allocator
     T* allocate(std::size_t n){
@@ -25,8 +25,8 @@ struct SecureAllocator{
             throw std::bad_alloc();
         }
 
-        // sodium_malloc allocates memory and places guard pages around it
-        // to instantly crash app if buffer overflow attack occurs
+        //currently sodium_malloc allocates memory and places guard pages around it
+        // i will do it to instantly crash app if buffer overflow attack occurs
         
         // allocate size n*sizeof(T) from sodium malloc -> it return void* ptr if success else allocation failed it return nullptr
         // static cast <T*> = converts void* to T*
