@@ -15,7 +15,7 @@ DCharVault is designed to ensure zero plaintext leakage to disk or swap memory.
 * **Cryptography:** Libsodium
 * **Database:** SQLite (Encrypted payloads only)
 
-## 🚀 CI/CD & Build Pipeline
+## CI/CD & Build Pipeline
 Automated cross-compilation pipeline utilizing GitHub Actions:
 * **Linux (Ubuntu):** Manual bundling, RPATH patching (`patchelf`), and dependency isolation.
 * **Windows (MSVC):** Vcpkg integration and `windeployqt` packaging.
