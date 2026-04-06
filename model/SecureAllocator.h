@@ -25,23 +25,28 @@ struct SecureAllocator{
             throw std::bad_alloc();
         }
 
-        //currently sodium_malloc allocates memory and places guard pages around it
-        // i will do it to instantly crash app if buffer overflow attack occurs
-        
-        // allocate size n*sizeof(T) from sodium malloc -> it return void* ptr if success else allocation failed it return nullptr
-        // static cast <T*> = converts void* to T*
-        // p here is a ptr to raw allocated memory large enough to hold n objects of type T
-        if(auto p = static_cast<T*>(sodium_malloc(n*sizeof(T)))){
-            return p;
+        void* raw = sodium_malloc(n*sizeof(T));
+        if(!raw){
+            throw std::bad_alloc();
         }
-        throw std::bad_alloc();
+
+        // lock meme. from swapping into disk
+        if(sodium_mlock(raw, n*sizeof(T)) != 0){
+            sodium_free(raw);
+            throw std::bad_alloc();
+        }
+
+
+        return static_cast<T*>(raw);
     }
 
     //deallocator
     void deallocate(T* p, std::size_t n)noexcept{
-        // sodium_free automatically overwrites the memory with zeros before releasing it to the OS.
-        (void)n; // unused parameter
-        sodium_free(p);
+
+        if(p){
+            sodium_munlock(p, n*sizeof(T)); // unlock for freeing mem.
+            sodium_free(p);
+        }
     }
 };
 
