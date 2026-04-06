@@ -7,6 +7,7 @@
 #include<vector>
 #include<string>
 #include<cstdint>
+#include<limits>
 
 template <typename T>
 struct SecureAllocator{
@@ -19,34 +20,29 @@ struct SecureAllocator{
     constexpr SecureAllocator(const SecureAllocator<U>&) noexcept{} 
 
     // allocator
-    T* allocate(std::size_t n){
+    [[nodiscard]] T* allocate(std::size_t n){
         // check if n fit in std::size_t size
-        if(n>std::size_t(-1)/sizeof(T)){
+        if(n>std::numeric_limits<std::size_t>::max()/sizeof(T)){
             throw std::bad_alloc();
         }
 
-        void* raw = sodium_malloc(n*sizeof(T));
-        if(!raw){
-            throw std::bad_alloc();
+        //currently sodium_malloc allocates memory and places guard pages around it
+        // i will do it to instantly crash app if buffer overflow attack occurs
+        
+        // allocate size n*sizeof(T) from sodium malloc -> it return void* ptr if success else allocation failed it return nullptr
+        // static cast <T*> = converts void* to T*
+        // p here is a ptr to raw allocated memory large enough to hold n objects of type T
+        if(auto p = static_cast<T*>(sodium_malloc(n*sizeof(T)))){
+            return p;
         }
-
-        // lock meme. from swapping into disk
-        if(sodium_mlock(raw, n*sizeof(T)) != 0){
-            sodium_free(raw);
-            throw std::bad_alloc();
-        }
-
-
-        return static_cast<T*>(raw);
+        throw std::bad_alloc();
     }
 
     //deallocator
     void deallocate(T* p, std::size_t n)noexcept{
-
-        if(p){
-            sodium_munlock(p, n*sizeof(T)); // unlock for freeing mem.
-            sodium_free(p);
-        }
+        // sodium_free automatically overwrites the memory with zeros before releasing it to the OS.
+        (void)n; // unused parameter
+        sodium_free(p);
     }
 };
 
