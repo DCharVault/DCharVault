@@ -15,6 +15,7 @@ Page {
         editorArea.forceActiveFocus()
     }
 
+    property bool isDirtyState: false
     property int colorMode: 0 // 0 == text color, 1 == highlight color
     property int currentEntryId: -1
     property string originalTitle: ""
@@ -195,6 +196,35 @@ Page {
             editorArea.forceActiveFocus()
         }
     }
+    MessageDialog {
+        id: unsavedChangesDialog
+        title: "Unsavd Changes"
+        text: "You have unsaved Changes in this page!"
+        informativeText: "Do you want to save them before leaving"
+        buttons: MessageDialog.Save | MessageDialog.Discard | MessageDialog.Cancel
+
+        // for remembering of user click on sidebar
+        property int pendingTargetId: -1
+        onButtonClicked: function(button, role){
+            if(button===MessageDialog.Save){
+                console.log("QML: User chose to SAVE before navigating.")
+                saveAction.trigger()
+                //openEntry for triggering opening that sidebar entry in editor view
+                diaryViewModel.openEntry(pendingTargetId)
+            }
+            else if(button===MessageDialog.Discard){
+                console.log("QML: User chose to DISCARD changes.")
+                root.isDirtyState = false
+                diaryViewModel.openEntry(pendingTargetId)
+            }
+            else if(button===MessageDialog.Cancel){
+                console.log("QML: User canceled navigation.")
+                // do nothing close this dialog
+                pendingTargetId = -1
+            }
+        }
+    }
+
     MessageDialog {
         id: deleteConfirmDialog
         title: "Delete Entry"
