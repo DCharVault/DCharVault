@@ -7,6 +7,7 @@
 #include<vector>
 #include<string>
 #include<cstdint>
+#include<limits>
 
 template <typename T>
 struct SecureAllocator{
@@ -19,15 +20,11 @@ struct SecureAllocator{
     constexpr SecureAllocator(const SecureAllocator<U>&) noexcept{} 
 
     // allocator
-    T* allocate(std::size_t n){
+    [[nodiscard]] T* allocate(std::size_t n){
         // check if n fit in std::size_t size
-        if(n>std::size_t(-1)/sizeof(T)){
+        if(n>std::numeric_limits<std::size_t>::max()/sizeof(T)){
             throw std::bad_alloc();
         }
-
-        //currently sodium_malloc allocates memory and places guard pages around it
-        // i will do it to instantly crash app if buffer overflow attack occurs
-        
         // allocate size n*sizeof(T) from sodium malloc -> it return void* ptr if success else allocation failed it return nullptr
         // static cast <T*> = converts void* to T*
         // p here is a ptr to raw allocated memory large enough to hold n objects of type T
