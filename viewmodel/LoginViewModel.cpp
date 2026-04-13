@@ -1,6 +1,7 @@
 #include"LoginViewModel.h"
 #include<QUrl>
-
+#include<QDir>
+#include<QStandardPaths>
 #include<QDebug>
 
 #include "SecurePasswordInput.h"
@@ -44,6 +45,7 @@ void LoginViewModel::authenticate(SecurePasswordInput *passwordField, const QStr
     }
 }
 
+<<<<<<< HEAD
 
 void LoginViewModel::updateTitleBar(bool isDark) {
 #ifdef Q_OS_WIN
@@ -56,4 +58,57 @@ void LoginViewModel::updateTitleBar(bool isDark) {
         }
     }
 #endif
+=======
+void LoginViewModel::createVault(SecurePasswordInput *passwordField, const QString &dbUrl){
+    if(!passwordField){
+        qCritical() << "Error: Password field is null.";
+        return;
+    }
+    // convert qml file: //url to a native OS file path
+    const QString localFilePath = QUrl(dbUrl).isLocalFile() ? QUrl(dbUrl).toLocalFile() : dbUrl;
+    if(localFilePath.isEmpty()){
+        qCritical()<<"Error: No database file selected";
+        emit dbNotFound();
+        return;
+    }
+    bool openState = (m_diaryManager.openDiary(localFilePath, passwordField->getSecureBuffer()) == DiaryError::None);
+    passwordField->clearPassword();
+    if(openState){
+        qDebug() << "ViewModel: Login successful. Firing success signal to QML.";
+        emit loginSuccess();
+    }else{
+        qDebug() << "ViewModel: Login failed. Firing failure signal to QML.";
+        emit loginFailed();
+    }
+}
+
+void LoginViewModel::createVaultAndroid(const QString &journalName, SecurePasswordInput *passwordField){
+    if(!passwordField){
+        qCritical() << "Error: Password field is null.";
+        return;
+    }
+    QString docsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    QDir dir(docsPath);
+    dir.mkdir("DCharVault");
+
+    QString safeName = journalName.trimmed();
+
+    if(!safeName.endsWith(".db")){
+        safeName+=".db";
+    }
+
+    QString fullPath = docsPath + "/DCharVault/" + safeName;
+
+    bool createState = (m_diaryManager.openDiary(fullPath, passwordField->getSecureBuffer()) == DiaryError::None);
+    passwordField->clearPassword();
+
+    if(createState){
+        qDebug() << "ViewModel: Login successful. Firing success signal to QML.";
+        emit loginSuccess();
+    }else{
+        qDebug() << "ViewModel: Login failed. Firing failure signal to QML.";
+        emit loginFailed();
+    }
+
+>>>>>>> 855b2e4 (UI Logic For Journal Creation)
 }
