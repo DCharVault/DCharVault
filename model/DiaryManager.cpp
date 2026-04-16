@@ -19,7 +19,7 @@ bool DiaryManager::isVaultOpened() const{
     return !masterKey.empty();
 }
 
-[[nodiscard]] DiaryError DiaryManager::openDiary(const QString& path, const SecureString& password) {
+[[nodiscard]] DiaryError DiaryManager::openDiary(const QString& journalName, const QString& path, const SecureString& password) {
     if(!dbManager.databaseInit(path)){
         return DiaryError::DatabaseOpenError;
     }
@@ -45,12 +45,17 @@ bool DiaryManager::isVaultOpened() const{
 
     masterKey = encManager.deriveMasterKey(password,salt);
     if(masterKey.empty()){
+
         return DiaryError::AuthenticationFailed;
     }
     const QString verifyKey = "verification_block";
     QByteArray encryptedVerifyBlock = dbManager.getConfigValue(verifyKey);
     if(encryptedVerifyBlock.isEmpty()){
         // brand new vault: generate a new random value for verification
+        //todo: this is where need that journal name
+        if(dbManager.setJournalName(journalName)){
+            qCritical()<<"Journal Name has been set to: "<<journalName;
+        }
         qDebug() << "New vault. Generating randomized verification block...";
         QString randomText = encManager.generateRandomBytes(32).toHex(); // why convert to hex from qbytearray
         QByteArray newBlock = encManager.encryptString(randomText,masterKey);

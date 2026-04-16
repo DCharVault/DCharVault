@@ -27,7 +27,7 @@ public:
     bool updateEntry(const qint64 id, const qint64 updated_at, const QByteArray& encrypted_title, const QByteArray& encrypted_content);
 
 
-    bool setJournalName(const QString& newJournal_name, const qint64 updated_at);
+    bool setJournalName(const QString& newJournal_name);
     bool setShareableStatus(const bool isShareable);
     bool setSpecialStatus(const QString& status);
 

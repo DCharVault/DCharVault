@@ -11,8 +11,9 @@ Rectangle {
     //custom signal so parent file knows when Enter is pressed
     signal enterPressed()
 
-    color: "#ffffff"
-    border.color: secureInput.activeFocus ? "#3b82f6" : "#cccccc"
+
+    color: ThemeManager.bgInput
+    border.color: secureInput.activeFocus ? ThemeManager.colorAccent : ThemeManager.lineBorder
     border.width: secureInput.activeFocus ? 2 : 1
     radius: 7
 

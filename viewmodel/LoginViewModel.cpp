@@ -34,7 +34,7 @@ void LoginViewModel::authenticate(SecurePasswordInput *passwordField, const QStr
         return;
     }
 
-    bool openState = (m_diaryManager.openDiary(localFilePath, passwordField->getSecureBuffer()) == DiaryError::None);
+    bool openState = (m_diaryManager.openDiary("\0",localFilePath, passwordField->getSecureBuffer()) == DiaryError::None); // for auth we do not need filename
     passwordField->clearPassword();
     if(openState){
         qDebug() << "ViewModel: Login successful. Firing success signal to QML.";
@@ -44,8 +44,6 @@ void LoginViewModel::authenticate(SecurePasswordInput *passwordField, const QStr
         emit loginFailed();
     }
 }
-
-<<<<<<< HEAD
 
 void LoginViewModel::updateTitleBar(bool isDark) {
 #ifdef Q_OS_WIN
@@ -58,8 +56,9 @@ void LoginViewModel::updateTitleBar(bool isDark) {
         }
     }
 #endif
-=======
-void LoginViewModel::createVault(SecurePasswordInput *passwordField, const QString &dbUrl){
+}
+
+void LoginViewModel::createVault(const QString& newJournalName,SecurePasswordInput *passwordField, const QString &dbUrl){
     if(!passwordField){
         qCritical() << "Error: Password field is null.";
         return;
@@ -71,7 +70,7 @@ void LoginViewModel::createVault(SecurePasswordInput *passwordField, const QStri
         emit dbNotFound();
         return;
     }
-    bool openState = (m_diaryManager.openDiary(localFilePath, passwordField->getSecureBuffer()) == DiaryError::None);
+    bool openState = (m_diaryManager.openDiary(newJournalName,localFilePath, passwordField->getSecureBuffer()) == DiaryError::None);
     passwordField->clearPassword();
     if(openState){
         qDebug() << "ViewModel: Login successful. Firing success signal to QML.";
@@ -99,7 +98,7 @@ void LoginViewModel::createVaultAndroid(const QString &journalName, SecurePasswo
 
     QString fullPath = docsPath + "/DCharVault/" + safeName;
 
-    bool createState = (m_diaryManager.openDiary(fullPath, passwordField->getSecureBuffer()) == DiaryError::None);
+    bool createState = (m_diaryManager.openDiary(journalName, fullPath, passwordField->getSecureBuffer()) == DiaryError::None);
     passwordField->clearPassword();
 
     if(createState){
@@ -109,6 +108,4 @@ void LoginViewModel::createVaultAndroid(const QString &journalName, SecurePasswo
         qDebug() << "ViewModel: Login failed. Firing failure signal to QML.";
         emit loginFailed();
     }
-
->>>>>>> 855b2e4 (UI Logic For Journal Creation)
 }

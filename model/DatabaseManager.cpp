@@ -224,19 +224,19 @@ std::vector<EntryMetadata> DatabaseManager::getAllEntriesMetadata(){
     return eMeta;
 }
 
-bool DatabaseManager::setJournalName(const QString &newJournal_name, const qint64 updated_at){
+bool DatabaseManager::setJournalName(const QString &newJournal_name){
     QSqlQuery query;
     query.prepare(R"(
-        INSERT INTO journal_metadata(id,journal_name,created_at,updated_at)
-        VALUES (1,:journal_name,:created_at,:updated_at)
+        INSERT INTO journal_metadata(id,journal_name)
+        VALUES (1,:journal_name)
         ON CONFLICT(id) DO UPDATE SET
             journal_name = excluded.journal_name
-            updated_at = excluded.updated_at
     )");
     if(!query.exec()){
         qCritical() << "Failed to set journal name:" << query.lastError().text();
         return false;
     }
+    qCritical()<<"Database Statement: Journal Name has been set to: "<<newJournal_name;
     return true;
 }
 bool DatabaseManager::setShareableStatus(const bool isShareable){

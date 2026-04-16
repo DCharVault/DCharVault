@@ -144,12 +144,8 @@ qt_add_qml_module(appDCharVault
         viewmodel/DiaryViewModel.cpp
         viewmodel/DiaryListModel.cpp
         viewmodel/SecurePasswordInput.cpp
-<<<<<<< HEAD
         SOURCES viewmodel/ClipboardSanitizer.cpp
-=======
         QML_FILES ui/common/VaultPasswordField.qml
-
->>>>>>> 855b2e4 (UI Logic For Journal Creation)
 )
 
 

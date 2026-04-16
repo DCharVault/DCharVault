@@ -15,16 +15,13 @@ class LoginViewModel : public QObject{
 public:
     explicit LoginViewModel(DiaryManager& manager,QObject *parent=nullptr);
 
-<<<<<<< HEAD
     ClipboardSanitizer* sanitizer() {return &m_sanitizer;}
 
     // Q_INVOKABLE makes this function callable directly from QML button onClicked
-=======
->>>>>>> 855b2e4 (UI Logic For Journal Creation)
     Q_INVOKABLE void authenticate(SecurePasswordInput* passwordField, const QString& dbUrl);
     Q_INVOKABLE void updateTitleBar(bool isDark);
 
-    Q_INVOKABLE void createVault(SecurePasswordInput* passwordField, const QString& dbUrl);
+    Q_INVOKABLE void createVault(const QString& journalName,SecurePasswordInput* passwordField, const QString& dbUrl);
 
     Q_INVOKABLE void createVaultAndroid(const QString& journalName,SecurePasswordInput *passwordField);
 signals:
