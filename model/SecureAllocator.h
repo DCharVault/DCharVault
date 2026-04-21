@@ -53,6 +53,15 @@ bool operator!=(const SecureAllocator<T>&, const SecureAllocator<U>&){return fal
 
 // Secure Containers as compare to String and Vector
 using SecureVector = std::vector<uint8_t, SecureAllocator<uint8_t>>;
-using SecureString = std::vector<char, SecureAllocator<char>>;
+struct SecureString : std::vector<char, SecureAllocator<char>> {
+    using Base = std::vector<char, SecureAllocator<char>>;
+    using Base::Base; // inherit all constructors
+    // allow moves
+    SecureString(SecureString&&) = default;
+    SecureString& operator=(SecureString&&) = default;
+    // block copies
+    SecureString(const SecureString&) = delete;
+    SecureString& operator=(const SecureString&) = delete;
+};
 
 #endif // SECUREALLOCATOR_H
