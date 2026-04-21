@@ -9,9 +9,7 @@ find_package(Qt6 REQUIRED COMPONENTS Quick Sql QuickControls2 QuickDialogs2)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
-# 3-> PLATFORM SPECIFIC SETUP (Windows, Android, Linux)
-
-# --- WINDOWS SETUP
+# -WINDOWS SETUP
 if(WIN32 AND NOT ANDROID)
     if(DEFINED ENV{SODIUM_ROOT_ENV})
         set(SODIUM_ROOT $ENV{SODIUM_ROOT_ENV})
@@ -25,7 +23,6 @@ if(WIN32 AND NOT ANDROID)
         message(FATAL_ERROR "Windows Libsodium missing! \nExpected at: ${SODIUM_ROOT}/include/sodium.h")
     endif()
 
-    # Setup Headers
     include_directories(${SODIUM_ROOT}/include)
 
     find_library(SODIUM_LIB
@@ -36,7 +33,7 @@ if(WIN32 AND NOT ANDROID)
     message(STATUS "Windows Security Core linked: ${SODIUM_LIB}")
 endif()
 
-# --- ANDROID SETUP
+# -ANDROID SETUP
 if(ANDROID)
     if(DEFINED ENV{SODIUM_ANDROID_ROOT_ENV})
         set(SODIUM_ANDROID_ROOT $ENV{SODIUM_ANDROID_ROOT_ENV})
@@ -55,7 +52,6 @@ if(ANDROID)
         message(FATAL_ERROR "Android Libsodium missing! Checked: ${SODIUM_LIB_PATH}")
     endif()
 
-    # 2. Add the Correct Include Path
     include_directories("${SODIUM_INCLUDE_PATH}")
     set(SODIUM_LIB "${SODIUM_LIB_PATH}")
 
@@ -63,7 +59,7 @@ if(ANDROID)
     message(STATUS "Android Security Core linked: ${SODIUM_LIB}")
 endif()
 
-# --- LINUX / UNIX SETUP 
+# -LINUX/UNIX SETUP
 if(UNIX AND NOT ANDROID AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SODIUM REQUIRED libsodium)
@@ -73,7 +69,7 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
         PATHS ${SODIUM_INCLUDE_DIRS} /usr/include /usr/local/include
     )
     
-    # Add both paths to be safe (One for <sodium.h>, one for <sodium/sodium.h>)
+    #both paths to be safe (One for <sodium.h>, one for <sodium/sodium.h>)
     include_directories(${SODIUM_INCLUDE_DIRS})
     if(SODIUM_INCLUDE_DIR)
         include_directories(${SODIUM_INCLUDE_DIR})
@@ -84,14 +80,12 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 endif()
 
 
-# --- 4. APP TARGET ---
-
+# -APP TARGET
 qt_add_executable(appDCharVault
     MANUAL_FINALIZATION
     main.cpp
 )
 
-# Base QML files that every platform needs
 set(APP_QML_FILES
     Main.qml
     ui/common/login.qml
@@ -99,7 +93,7 @@ set(APP_QML_FILES
     ui/common/about.qml
 )
 
-# Branch the UI files based on the platform
+
 if(ANDROID)
     list(APPEND APP_QML_FILES
         ui/android/EditorView.qml
@@ -137,7 +131,6 @@ qt_add_qml_module(appDCharVault
         model/DatabaseManager.cpp
         model/EncryptionManager.cpp
 
-
         viewmodel/SecurePasswordInput.h
         viewmodel/DiaryListModel.h
         viewmodel/LoginViewModel.h
@@ -167,7 +160,6 @@ target_link_libraries(appDCharVault
     PRIVATE ${SODIUM_LIB}
 )
 
-# Only link Android log lib if we are actually on Android
 if(ANDROID)
     target_link_libraries(appDCharVault PRIVATE ${ANDROID_LOG_LIB})
 endif()
