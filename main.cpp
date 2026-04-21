@@ -10,6 +10,7 @@
 #include "viewmodel/DiaryViewModel.h"
 #include "viewmodel/DiaryListModel.h"
 
+
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
@@ -51,3 +52,4 @@ int main(int argc, char *argv[])
 
     return app.exec();
 }
+

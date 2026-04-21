@@ -13,13 +13,14 @@ SecurePasswordInput::~SecurePasswordInput(){
 }
 
 int SecurePasswordInput::passwordLength() const{
-    return m_secureBuffer.length();
+    return static_cast<int>(m_secureBuffer.size());
 }
 
 void SecurePasswordInput::clearPassword(){
     // Manually overwrite existing characters with zeros before clearing
     std::fill(m_secureBuffer.begin(),m_secureBuffer.end(),'\0');
     m_secureBuffer.clear();// Overwrites with zeros via SecureAllocator
+    m_secureBuffer.shrink_to_fit();// triggers sodium_free → guaranteed zero + release
     emit passwordLengthChanged();
 }
 

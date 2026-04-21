@@ -177,7 +177,7 @@ QString DiaryManager::readEntryContent(int64_t id){
 
     QByteArray encryptedContent = dbManager.getEntryContent(id);
     if (encryptedContent.isEmpty()) {
-        return ""; // Could be a genuinely blank note, or a DB error
+        return ""; // could be a genuinely blank note, or a DB error
     }
 
     QString decryptedContent = encManager.decryptString(encryptedContent,masterKey);

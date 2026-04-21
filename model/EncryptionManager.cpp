@@ -30,7 +30,7 @@ SecureVector EncryptionManager::deriveMasterKey(const SecureString &password, co
 {
     SecureVector key(crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
     if(crypto_pwhash(key.data(),key.size(),
-                      password.c_str(),password.length(),
+                      password.data(),password.size(),
                       reinterpret_cast<const unsigned char*>(salt.constData()),
                       crypto_pwhash_OPSLIMIT_INTERACTIVE,
                       crypto_pwhash_MEMLIMIT_INTERACTIVE,
