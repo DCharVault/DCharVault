@@ -2,29 +2,35 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
+import DCharVault
 
 ToolBar {
     id: root
-
+    palette.buttonText: ThemeManager.textMain
+    background: Rectangle {
+        implicitHeight: 56
+        color: ThemeManager.bgCard
+    }
     property alias currentFontSize: sizeField.text
     property bool isBold: false
     property bool isItalic: false
     property bool isUnderline: false
 
-    signal boldClicked()
-    signal italicClicked()
-    signal underlineClicked()
-    signal colorClicked()
-    signal highlighterClicked()
-    signal deleteEntryClicked()
-    signal doneClicked()
+    signal boldClicked
+    signal italicClicked
+    signal underlineClicked
+    signal colorClicked
+    signal highlighterClicked
+    signal deleteEntryClicked
+    signal doneClicked
     signal fontSelected(string fontName)
     signal fontSizeSelected(int sizeFont)
-
 
     // A tiny border line for desktop mode
     Rectangle {
         width: parent.width
+        height: 1
+        color: ThemeManager.lineBorder
         anchors.bottom: parent.bottom
     }
 
@@ -35,7 +41,6 @@ ToolBar {
         contentWidth: toolbarLayout.implicitWidth
         contentHeight: parent.height
         clip: true
-
 
         RowLayout {
             id: toolbarLayout
@@ -51,6 +56,12 @@ ToolBar {
                 font.bold: true
                 font.pixelSize: 20
                 Layout.preferredHeight: 50
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             }
 
             // --- COMPACT Font Size Stepper ---
@@ -59,9 +70,9 @@ ToolBar {
                 Layout.preferredWidth: stepperRow.implicitWidth + 8
                 Layout.preferredHeight: 32
                 Layout.alignment: Qt.AlignVCenter
-                radius: 4
-                color: "#F5F5F5"
-                border.color: "#E0E0E0"
+                radius: ThemeManager.radiusDefault
+                color: ThemeManager.bgInput
+                border.color: ThemeManager.lineBorder
 
                 RowLayout {
                     id: stepperRow
@@ -77,7 +88,7 @@ ToolBar {
                             font: parent.font
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
-                            color: "#333"
+                            color: ThemeManager.textMain
                         }
                         background: null
                         onClicked: {
@@ -89,7 +100,11 @@ ToolBar {
                         }
                     }
 
-                    Rectangle { width: 1; height: 16; color: "#DDD" }
+                    Rectangle {
+                        width: 1
+                        height: 16
+                        color: ThemeManager.lineBorder
+                    }
 
                     TextField {
                         id: sizeField
@@ -104,15 +119,22 @@ ToolBar {
                         background: null
                         selectByMouse: true
                         font.pixelSize: 14
-                        color: "#333333"
-                        validator: IntValidator { bottom: 6; top: 88 }
+                        color: ThemeManager.textMain
+                        validator: IntValidator {
+                            bottom: 6
+                            top: 88
+                        }
                         onAccepted: {
                             root.fontSizeSelected(parseInt(text))
                             focus = false
                         }
                     }
 
-                    Rectangle { width: 1; height: 16; color: "#DDD" }
+                    Rectangle {
+                        width: 1
+                        height: 16
+                        color: ThemeManager.lineBorder
+                    }
 
                     ToolButton {
                         text: "+"
@@ -120,10 +142,10 @@ ToolBar {
                         Layout.fillHeight: true
                         contentItem: Text {
                             text: parent.text
+                            color: ThemeManager.textMain
                             font: parent.font
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
-                            color: "#333"
                         }
                         background: null
                         onClicked: {
@@ -141,18 +163,36 @@ ToolBar {
                 text: "<b>B</b>"
                 checkable: true
                 checked: root.isBold
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
                 onClicked: root.boldClicked()
             }
             ToolButton {
                 text: "<i>I</i>"
                 checkable: true
                 checked: root.isItalic
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
                 onClicked: root.italicClicked()
             }
             ToolButton {
                 text: "<u>U</u>"
                 checkable: true
                 checked: root.isUnderline
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
                 onClicked: root.underlineClicked()
             }
 
@@ -160,6 +200,12 @@ ToolBar {
                 text: "A"
                 font.bold: true
                 palette.buttonText: "red"
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
                 onClicked: root.colorClicked()
             }
 
@@ -167,13 +213,25 @@ ToolBar {
                 text: "🖊️"
                 palette.buttonText: "#FFA500"
                 font.pixelSize: 16
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
                 onClicked: root.highlighterClicked()
             }
 
-            ToolButton{
+            ToolButton {
                 text: "X"
                 palette.button: "#FFA500"
                 font.pixelSize: 16
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
                 onClicked: root.deleteEntryClicked()
             }
         }

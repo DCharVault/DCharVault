@@ -1,11 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-
+import DCharVault
 Page {
     id: root
     background: Rectangle {
-        color: "#FAFAFA"
+        color: ThemeManager.bgVault
     }
 
     SplitView {
@@ -14,7 +14,7 @@ Page {
 
         handle: Rectangle {
             implicitWidth: 2
-            color: "#E0E0E0"
+            color: ThemeManager.lineBorder
         }
 
         SidebarView {
