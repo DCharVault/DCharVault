@@ -160,8 +160,11 @@ target_link_libraries(appDCharVault
     PRIVATE Qt6::QuickControls2
     PRIVATE Qt6::QuickDialogs2
     PRIVATE ${SODIUM_LIB}
-    PRIVATE dwmapi
 )
+
+if(WIN32)
+    target_link_libraries(appDCharVault PRIVATE dwmapi)
+endif()
 
 if(ANDROID)
     target_link_libraries(appDCharVault PRIVATE ${ANDROID_LOG_LIB})
