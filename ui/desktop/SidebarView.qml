@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
+import DCharVault
 
 Item {
     id: root
@@ -34,7 +35,7 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 height: 60 // Slightly taller to give the button room
-                color: "#ffffff"
+                color: ThemeManager.bgCard
 
                 RowLayout {
                     anchors.fill: parent
@@ -45,7 +46,7 @@ Item {
                         text: "My Notebook"
                         font.pixelSize: 20 // Slightly larger to feel like a header
                         font.bold: true
-                        color: "#222222"
+                        color: ThemeManager.textMain
                         Layout.fillWidth: true
                     }
 
@@ -57,8 +58,15 @@ Item {
                         Layout.preferredHeight: 40
                         // Make the button background transparent so it doesn't create an ugly grey circle
                         background: Rectangle {
-                            color: parent.down ? "#eeeeee" : (parent.hovered ? "#f5f5f5" : "transparent")
-                            radius: 4
+                            color: parent.down ? ThemeManager.bgButtonHover : (parent.hovered ? ThemeManager.bgButton : "transparent")
+                            radius: ThemeManager.radiusDefault
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            font: parent.font
+                            color: ThemeManager.textMain
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
                     }
                 }
@@ -68,7 +76,7 @@ Item {
                     width: parent.width
                     height: 1
                     anchors.bottom: parent.bottom
-                    color: "#e0e0e0"
+                    color: ThemeManager.lineBorder
                 }
             }
 
@@ -78,7 +86,7 @@ Item {
             Rectangle {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-                color: "#f9f9f9" // Very subtle background color to make the white cards pop
+                color: ThemeManager.bgVault
 
                 ListView {
                     id: noteList
@@ -107,10 +115,12 @@ Item {
                         height: 70
 
                         // Rounded borders
-                        radius: 8
-                        border.color: noteList.currentIndex === index ? "#DC4D01" : "#e0e0e0"
+                        radius: ThemeManager.radiusDefault
+                        border.color: noteList.currentIndex
+                                      === index ? ThemeManager.colorAccent : ThemeManager.lineBorder
                         border.width: noteList.currentIndex === index ? 2 : 1
-                        color: noteList.currentIndex === index ? "#e3f2fd" : "#ffffff"
+                        color: noteList.currentIndex
+                               === index ? ThemeManager.bgButton : ThemeManager.bgCard
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -122,9 +132,9 @@ Item {
                                 text: model.title
                                 font.pixelSize: 16
                                 font.bold: true
-                                color: "#222222"
+                                color: ThemeManager.textMain
                                 Layout.fillWidth: true
-                                elide: Text.ElideRight // <-- STOPS TEXT OVERFLOW
+                                elide: Text.ElideRight //STOPS TEXT OVERFLOW
                             }
 
                             // Metadata (Date, size, preview, etc.)
@@ -133,7 +143,7 @@ Item {
                                           new Date(model.createdAt * 1000),
                                           "MMM d, yyyy")
                                 font.pixelSize: 13
-                                color: "#777777"
+                                color: ThemeManager.textMuted
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
                             }
@@ -156,14 +166,14 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 height: 64 // Slightly taller for better touch targets
-                color: "#ffffff"
+                color: ThemeManager.bgCard
 
                 // Top border for the bottom bar
                 Rectangle {
                     width: parent.width
                     height: 1
                     anchors.top: parent.top
-                    color: "#e0e0e0"
+                    color: ThemeManager.lineBorder
                 }
 
                 RowLayout {
@@ -177,9 +187,12 @@ Item {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 40
                         placeholderText: "🔍 Search..."
+                        color: ThemeManager.textMain
                         background: Rectangle {
-                            color: "#f0f0f0"
-                            radius: 8 // Match the card radius
+                            color: ThemeManager.bgInput
+                            radius: ThemeManager.radiusDefault
+                            border.color: parent.activeFocus ? ThemeManager.colorAccent : ThemeManager.lineBorder
+                            border.width: parent.activeFocus ? 2 : 1
                         }
                         verticalAlignment: TextInput.AlignVCenter
                         leftPadding: 12
@@ -189,13 +202,21 @@ Item {
                     Button {
                         text: "+"
                         font.pixelSize: 24
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 40
+                        Layout.preferredWidth: ThemeManager.controlHeight
+                        Layout.preferredHeight: ThemeManager.controlHeight
 
                         // Custom background to match the aesthetic
                         background: Rectangle {
-                            color: parent.down ? "#d5d5d5" : (parent.hovered ? "#e0e0e0" : "#eeeeee")
-                            radius: 8
+                            color: parent.down ? ThemeManager.bgButtonHover : (parent.hovered ? ThemeManager.bgButtonHover : ThemeManager.bgButton)
+                            radius: ThemeManager.radiusDefault
+                            border.color: ThemeManager.lineBorder
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            font: parent.font
+                            color: ThemeManager.textMain
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
 
                         ToolTip.visible: hovered

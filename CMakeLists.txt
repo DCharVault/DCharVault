@@ -88,6 +88,7 @@ qt_add_executable(appDCharVault
 
 set(APP_QML_FILES
     Main.qml
+    ui/common/ThemeManager.qml
     ui/common/login.qml
    # ui/common/loginView.qml 
     ui/common/about.qml
@@ -111,6 +112,8 @@ else()
         ui/common/AndroidLogin.qml
     )
 endif()
+
+set_source_files_properties(ui/common/ThemeManager.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(appDCharVault
     URI DCharVault
@@ -140,7 +143,6 @@ qt_add_qml_module(appDCharVault
         viewmodel/DiaryViewModel.cpp
         viewmodel/DiaryListModel.cpp
         viewmodel/SecurePasswordInput.cpp
-
 )
 
 
@@ -159,6 +161,10 @@ target_link_libraries(appDCharVault
     PRIVATE Qt6::QuickDialogs2
     PRIVATE ${SODIUM_LIB}
 )
+
+if(WIN32)
+    target_link_libraries(appDCharVault PRIVATE dwmapi)
+endif()
 
 if(ANDROID)
     target_link_libraries(appDCharVault PRIVATE ${ANDROID_LOG_LIB})

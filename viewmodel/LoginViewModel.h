@@ -15,6 +15,7 @@ public:
 
     // Q_INVOKABLE makes this function callable directly from QML button onClicked
     Q_INVOKABLE void authenticate(SecurePasswordInput* passwordField, const QString& dbUrl);
+    Q_INVOKABLE void updateTitleBar(bool isDark);
 
 signals:
     // Emitted to tell QML to transition to the Home Screen

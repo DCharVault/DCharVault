@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import Vault.Security 1.0
+import DCharVault
 
 Item {
     id: loginRoot
@@ -10,7 +11,7 @@ Item {
     // loginRoot background
     Rectangle {
         anchors.fill: parent
-        color: "#f3f4f6"
+        color: ThemeManager.bgVault
     }
 
     FileDialog {
@@ -28,10 +29,10 @@ Item {
         anchors.centerIn: parent
         width: 340
         height: mainColumn.implicitHeight + 40
-        color: "#ffffff"
-        radius: 12
-        border.color: "#e5e7eb"
+        color: ThemeManager.bgCard
+        border.color: ThemeManager.lineBorder
         border.width: 1
+        radius: 12
 
         ColumnLayout {
             id: mainColumn
@@ -43,14 +44,27 @@ Item {
                 text: "Unlock DCharVault"
                 font.pixelSize: 22
                 font.bold: true
-                color: "#111827"
+                color: ThemeManager.textMain
                 Layout.alignment: Qt.AlignHCenter
                 Layout.bottomMargin: 10
             }
 
             Button {
                 text: selectedDBUrl === "" ? "Select Vault File..." : "Change Vault File"
+                Layout.preferredHeight: ThemeManager.controlHeight
                 Layout.fillWidth: true
+
+                background: Rectangle {
+                    color: parent.hovered ? ThemeManager.bgButtonHover : ThemeManager.bgButton
+                    radius: ThemeManager.radiusDefault
+                    border.color: ThemeManager.lineBorder
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
                 onClicked: vaultSelector.open()
             }
 
@@ -61,17 +75,12 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
             }
 
-            Label {
-                text: "Enter Password"
-                Layout.fillWidth: true
-            }
-
             // The Visual Box
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
-                color: "#ffffff"
-                border.color: secureInput.activeFocus ? "#3b82f6" : "#cccccc"
+                Layout.preferredHeight: ThemeManager.controlHeight
+                color: ThemeManager.bgInput
+                border.color: secureInput.activeFocus ? ThemeManager.colorAccent : ThemeManager.lineBorder
                 border.width: secureInput.activeFocus ? 2 : 1
                 radius: 7
                 // The invisible C++ key interceptor
@@ -84,7 +93,7 @@ Item {
                         anchors.margins: 12
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: 24
-                        color: "#111111"
+                        color: ThemeManager.textMain
                         // This dynamically creates a string of dots exactly as long as your password
                         text: "".padStart(secureInput.passwordLength, "•")
                         // Placeholder text when empty
@@ -92,7 +101,7 @@ Item {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
                             text: "Enter Password"
-                            color: "#9ca3af"
+                            color: ThemeManager.textMuted
                             font.pixelSize: 14
                             visible: secureInput.passwordLength === 0
                         }
@@ -103,7 +112,8 @@ Item {
                         console.log("QML: Enter pressed. Triggering C++ authentication.")
                         // Pass the actual component to C++, NOT a text string
                         if (selectedDBUrl != "") {
-                            loginViewModel.authenticate(secureInput,selectedDBUrl)
+                            loginViewModel.authenticate(secureInput,
+                                                        selectedDBUrl)
                         }
                     }
                 }
@@ -114,6 +124,18 @@ Item {
                 text: "Unlock Vault"
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignHCenter
+                background: Rectangle{
+                    color: parent.enabled ? (parent.hovered ? Qt.lighter(ThemeManager.colorAccent, 1.1) : ThemeManager.colorAccent)
+                                                              : ThemeManager.bgButton
+                    radius: ThemeManager.radiusDefault
+                    border.color: ThemeManager.lineBorder
+                }
+                contentItem: Text{
+                    text: parent.text
+                    color: parent.enabled ? "#FFFFFF" : ThemeManager.textMuted
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
                 onClicked: {
                     loginViewModel.authenticate(secureInput, selectedDBUrl)
                 }

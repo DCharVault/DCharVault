@@ -3,9 +3,15 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 import QtQuick.Dialogs
+import DCharVault
 
 Page {
     id: root
+
+    // explicitly set the background
+    background: Rectangle {
+        color: ThemeManager.bgVault
+    }
 
     function refreshCursor() {
         let start = editorArea.selectionStart
@@ -255,7 +261,7 @@ Page {
                 Layout.fillWidth: true
                 font.pixelSize: 22
                 font.bold: true
-                color: "#222222" // Matched to sidebar title color
+                color: ThemeManager.textMain
                 background: null
                 selectByMouse: true
                 padding: 0
@@ -269,14 +275,14 @@ Page {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
-                color: "#e0e0e0" // Matched to sidebar border color exactly
+                color: ThemeManager.lineBorder
             }
 
             // date label
             Text {
                 id: dateLabel
                 text: Qt.formatDateTime(new Date(), "dddd, MMMM d • h:mm AP")
-                color: "#777777" // Matched to sidebar metadata color
+                color: ThemeManager.textMuted
                 font.pixelSize: 13 // Matched to sidebar metadata size
             }
         }
@@ -288,7 +294,9 @@ Page {
             flickableDirection: Flickable.VerticalFlick
             clip: true
 
-            ScrollBar.vertical: ScrollBar { width: 9}
+            ScrollBar.vertical: ScrollBar {
+                width: 9
+            }
 
             TextArea.flickable: TextArea {
                 id: editorArea
@@ -300,7 +308,7 @@ Page {
                 wrapMode: Text.Wrap
                 background: null
                 persistentSelection: true
-                color: "#333333" // Softer black for long-form reading
+                color: ThemeManager.textMain
 
                 onCursorPositionChanged: {
                     if (editorArea.inputMethodComposing)
