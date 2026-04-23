@@ -39,21 +39,22 @@ void ClipboardSanitizer::notifyCopied() {
 }
 
 void ClipboardSanitizer::onSystemClipboardChanged() {
-
-    // DESIGN NOTE: There is a ~10ms window between clipboard change and our
-    // ownership relinquishment. If another app pastes during this window,
-    // our data may appear in their paste. The wipe timer acts as a fallback.
-
-
-    // if OS reports clipboard change
     if (QGuiApplication::applicationState() != Qt::ApplicationActive) {
-        //user switched to another external app and copied something.
-        // app must relinquish ownership immediately so app don't wipe their external data.
+        // User is in another app. Relinquish ownership.
         if (m_ownsClipboard) {
             m_ownsClipboard = false;
             m_wipeTimer.stop();
 #ifdef QT_DEBUG
             qDebug() << "[SEC] External copy detected. Relinquishing ownership.";
+#endif
+        }
+    } else {
+        // The app is active. We just copied something via Ctrl+C.
+        if (!m_ownsClipboard) {
+            m_ownsClipboard = true;
+            m_wipeTimer.start();
+#ifdef QT_DEBUG
+            qDebug() << "[SEC] Auto-detected Ctrl+C. Timer started.";
 #endif
         }
     }
@@ -88,8 +89,8 @@ void ClipboardSanitizer::overwriteWithGarbage() {
 
 void ClipboardSanitizer::executeSanitization() {
     if (m_ownsClipboard && m_clipboard) {
-        overwriteWithGarbage();
         m_ownsClipboard = false;
+        overwriteWithGarbage();
 
 #ifdef QT_DEBUG
         qDebug() << "[SEC] Clipboard memory overwritten and sanitized.";
