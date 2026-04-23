@@ -138,11 +138,13 @@ qt_add_qml_module(appDCharVault
         viewmodel/DiaryListModel.h
         viewmodel/LoginViewModel.h
         viewmodel/DiaryViewModel.h
+        viewmodel/ClipboardSanitizer.h
 
         viewmodel/LoginViewModel.cpp
         viewmodel/DiaryViewModel.cpp
         viewmodel/DiaryListModel.cpp
         viewmodel/SecurePasswordInput.cpp
+        SOURCES viewmodel/ClipboardSanitizer.cpp
 )
 
 
