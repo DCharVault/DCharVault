@@ -17,7 +17,7 @@
 
 
 LoginViewModel::LoginViewModel(DiaryManager &manager, QObject *parent)
-    : QObject(parent), m_diaryManager(manager){}
+    : QObject(parent), m_diaryManager(manager),m_sanitizer(30000,this){}
 
 void LoginViewModel::authenticate(SecurePasswordInput *passwordField, const QString& dbUrl){
     if (!passwordField) {

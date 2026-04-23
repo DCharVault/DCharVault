@@ -2,6 +2,7 @@
 #define LOGINVIEWMODEL_H
 
 #include"model/DiaryManager.h"
+#include"ClipboardSanitizer.h"
 #include<QObject>
 #include<QString>
 
@@ -9,9 +10,12 @@ class SecurePasswordInput;
 
 class LoginViewModel : public QObject{
     Q_OBJECT
+    Q_PROPERTY(ClipboardSanitizer* sanitizer READ sanitizer CONSTANT)
 
 public:
     explicit LoginViewModel(DiaryManager& manager,QObject *parent=nullptr);
+
+    ClipboardSanitizer* sanitizer() {return &m_sanitizer;}
 
     // Q_INVOKABLE makes this function callable directly from QML button onClicked
     Q_INVOKABLE void authenticate(SecurePasswordInput* passwordField, const QString& dbUrl);
@@ -27,7 +31,7 @@ signals:
 
 private:
     DiaryManager& m_diaryManager;
-
+    ClipboardSanitizer m_sanitizer;
 };
 
 #endif // LOGINVIEWMODEL_H
