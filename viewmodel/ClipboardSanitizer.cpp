@@ -1,7 +1,8 @@
 #include"ClipboardSanitizer.h"
 #include<QGuiApplication>
 #include<QString>
-
+#include<QMimeData>
+#include <algorithm>
 //wrap debug logs to prevent console leakage in Release builds
 #ifdef QT_DEBUG
 #include <QDebug>
@@ -71,16 +72,17 @@ void ClipboardSanitizer::overwriteWithGarbage() {
     if (m_clipboard) {
         //to match the original data size
         const QMimeData *original = m_clipboard->mimeData();
-        int estimatedSize = 0;
-        if (original) {
-            if (original->hasText()) {
-                estimatedSize = original->text().size();
-            }
+        int estimatedSize = 1024;
+        if (original && original->hasText()) {
+            estimatedSize = std::max(1024, (int)original->text().size());
         }
         // overwrite with at least 1KB of garbage, or matched size
         int overwriteSize = std::max(1024, estimatedSize);
         m_clipboard->setText(QString(overwriteSize, '*'));
         m_clipboard->clear();
+#ifdef QT_DEBUG
+        qDebug() << "[SEC] Clipboard overwritten (" << estimatedSize << " bytes) and cleared.";
+#endif
     }
 }
 
