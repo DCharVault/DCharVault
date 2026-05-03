@@ -43,7 +43,7 @@ if(ANDROID)
     endif()
 
     message(STATUS "Configuring for Android Arch: ${ANDROID_ABI}")
-    
+
     # 1. FIX: Point to the ABI specific folder (arm64-v8a), not the root!
     set(SODIUM_INCLUDE_PATH "${SODIUM_ANDROID_ROOT}/${ANDROID_ABI}/include")
     set(SODIUM_LIB_PATH "${SODIUM_ANDROID_ROOT}/${ANDROID_ABI}/lib/libsodium.a")
@@ -64,17 +64,17 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SODIUM REQUIRED libsodium)
 
-    find_path(SODIUM_INCLUDE_DIR sodium.h 
-        PATH_SUFFIXES sodium 
+    find_path(SODIUM_INCLUDE_DIR sodium.h
+        PATH_SUFFIXES sodium
         PATHS ${SODIUM_INCLUDE_DIRS} /usr/include /usr/local/include
     )
-    
+
     #both paths to be safe (One for <sodium.h>, one for <sodium/sodium.h>)
     include_directories(${SODIUM_INCLUDE_DIRS})
     if(SODIUM_INCLUDE_DIR)
         include_directories(${SODIUM_INCLUDE_DIR})
     endif()
-    
+
     set(SODIUM_LIB ${SODIUM_LIBRARIES})
     message(STATUS "Linux Security Core linked: ${SODIUM_LIB}")
 endif()
@@ -90,7 +90,8 @@ set(APP_QML_FILES
     Main.qml
     ui/common/ThemeManager.qml
     ui/common/login.qml
-   # ui/common/loginView.qml 
+    ui/common/VaultPasswordField.qml
+   # ui/common/loginView.qml
     ui/common/about.qml
 )
 
@@ -144,8 +145,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/DiaryViewModel.cpp
         viewmodel/DiaryListModel.cpp
         viewmodel/SecurePasswordInput.cpp
-        SOURCES viewmodel/ClipboardSanitizer.cpp
-        QML_FILES ui/common/VaultPasswordField.qml
+        viewmodel/ClipboardSanitizer.cpp
 )
 
 
