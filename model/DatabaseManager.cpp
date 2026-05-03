@@ -45,10 +45,8 @@ bool DatabaseManager::createTable(){
                                     CREATE TABLE IF NOT EXISTS journal_meta(
                                       id INTEGER PRIMARY KEY CHECK (id=1),
                                       journal_name TEXT NOT NULL,
-                                      created_at INTEGER NOT NULL,
-                                      updated_at INTEGER NOT NULL,
-                                      special_status TEXT NOT NULL,
-                                      shareable_status TEXT NOT NULL
+                                      special_status TEXT NOT NULL DEFAULT 'none',
+                                      shareable_status TEXT NOT NULL DEFAULT 'private'
                                     )
                                 )";
     if(!query.exec(createDiaryMetadataTable)){
@@ -227,11 +225,12 @@ std::vector<EntryMetadata> DatabaseManager::getAllEntriesMetadata(){
 bool DatabaseManager::setJournalName(const QString &newJournal_name){
     QSqlQuery query;
     query.prepare(R"(
-        INSERT INTO journal_metadata(id,journal_name)
+        INSERT INTO journal_meta(id,journal_name)
         VALUES (1,:journal_name)
         ON CONFLICT(id) DO UPDATE SET
             journal_name = excluded.journal_name
     )");
+    query.bindValue(":journal_name",newJournal_name);
     if(!query.exec()){
         qCritical() << "Failed to set journal name:" << query.lastError().text();
         return false;

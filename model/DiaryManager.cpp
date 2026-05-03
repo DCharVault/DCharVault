@@ -53,8 +53,14 @@ bool DiaryManager::isVaultOpened() const{
     if(encryptedVerifyBlock.isEmpty()){
         // brand new vault: generate a new random value for verification
         //todo: this is where need that journal name
-        if(dbManager.setJournalName(journalName)){
+        if(!journalName.isEmpty() && dbManager.setJournalName(journalName)){
             qCritical()<<"Journal Name has been set to: "<<journalName;
+        }else{
+            QString newJournalName = QString::fromStdString(TitleGenerator::generatorJournalTitle());
+            if(dbManager.setJournalName(newJournalName))
+                qCritical()<<"Journal Name has been generated to: "<<newJournalName;
+            else
+                qCritical()<<"Journal Name title generator has been failed!";
         }
         qDebug() << "New vault. Generating randomized verification block...";
         QString randomText = encManager.generateRandomBytes(32).toHex(); // why convert to hex from qbytearray
@@ -115,7 +121,6 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
 }
 
 [[nodiscard]] int64_t DiaryManager::createEntry(const QString& title, const QString& content) {
-    // TODO: Encrypt text, call dbManager.insertEntry(), get new ID, add to vector.
     if(masterKey.empty()){
         qCritical()<<"Master Key is Empty! can't create a new entry to this journal";
         return -1;
@@ -142,8 +147,6 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
     }
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 timeStamp = QDateTime::currentSecsSinceEpoch();
-    // todo: link journal name here instead of 'Hardcoded journal'
-
     int64_t insertedId = dbManager.insertEntry(timeStamp,titleEncrypted,contentEncrypted);
     return insertedId;
 }

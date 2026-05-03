@@ -51,9 +51,7 @@ Item {
         border.width: 1
         radius: 12
 
-        // ==========================================
-        // STATE 1: LOGIN OLD JOURNAL
-        // ==========================================
+        // STATE 1: LOGIN JOURNAL
         ColumnLayout {
             id: loginColumn
             anchors.centerIn: parent
@@ -154,9 +152,7 @@ Item {
             }
         }
 
-        // ==========================================
         // STATE 2: CREATE A NEW JOURNAL
-        // ==========================================
         ColumnLayout {
             id: createColumn
             anchors.centerIn: parent
@@ -168,7 +164,7 @@ Item {
                 text: "Create New Journal"
                 font.pixelSize: 22
                 font.bold: true
-                color: ThemeManager.textMain // Removed hardcoded #111827, replaced with ThemeManager
+                color: ThemeManager.textMain
                 Layout.alignment: Qt.AlignHCenter
                 Layout.bottomMargin: 10
             }
@@ -224,6 +220,7 @@ Item {
                 }
             }
 
+            // Back button moved to state1
             Button {
                 text: "Back To Login"
                 flat: true
