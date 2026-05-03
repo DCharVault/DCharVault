@@ -19,7 +19,7 @@ bool DiaryManager::isVaultOpened() const{
     return !masterKey.empty();
 }
 
-[[nodiscard]] DiaryError DiaryManager::openDiary(const QString& path, const SecureString& password) {
+[[nodiscard]] DiaryError DiaryManager::openDiary(const QString& journalName, const QString& path, const SecureString& password) {
     if(!dbManager.databaseInit(path)){
         return DiaryError::DatabaseOpenError;
     }
@@ -45,12 +45,23 @@ bool DiaryManager::isVaultOpened() const{
 
     masterKey = encManager.deriveMasterKey(password,salt);
     if(masterKey.empty()){
+
         return DiaryError::AuthenticationFailed;
     }
     const QString verifyKey = "verification_block";
     QByteArray encryptedVerifyBlock = dbManager.getConfigValue(verifyKey);
     if(encryptedVerifyBlock.isEmpty()){
         // brand new vault: generate a new random value for verification
+        //todo: this is where need that journal name
+        if(!journalName.isEmpty() && dbManager.setJournalName(journalName)){
+            qCritical()<<"Journal Name has been set to: "<<journalName;
+        }else{
+            QString newJournalName = QString::fromStdString(TitleGenerator::generatorJournalTitle());
+            if(dbManager.setJournalName(newJournalName))
+                qCritical()<<"Journal Name has been generated to: "<<newJournalName;
+            else
+                qCritical()<<"Journal Name title generator has been failed!";
+        }
         qDebug() << "New vault. Generating randomized verification block...";
         QString randomText = encManager.generateRandomBytes(32).toHex(); // why convert to hex from qbytearray
         QByteArray newBlock = encManager.encryptString(randomText,masterKey);
@@ -75,7 +86,7 @@ bool DiaryManager::isVaultOpened() const{
     return DiaryError::None;
 }
 
-[[nodiscard]] DiaryError DiaryManager::loadFromDisk() {
+[[nodiscard]] DiaryError DiaryManager::loadFromDisk(const QString& path) {
     // TODO: Read all rows from dbManager, decrypt them, put them in 'entries' vector.
     return DiaryError::None;
 }
@@ -110,7 +121,6 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
 }
 
 [[nodiscard]] int64_t DiaryManager::createEntry(const QString& title, const QString& content) {
-    // TODO: Encrypt text, call dbManager.insertEntry(), get new ID, add to vector.
     if(masterKey.empty()){
         qCritical()<<"Master Key is Empty! can't create a new entry to this journal";
         return -1;
@@ -137,8 +147,7 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
     }
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 timeStamp = QDateTime::currentSecsSinceEpoch();
-    // todo: link journal name here instead of 'Hardcoded journal'
-    int64_t insertedId = dbManager.insertEntry("Hardcoded journal",timeStamp,titleEncrypted,contentEncrypted);
+    int64_t insertedId = dbManager.insertEntry(timeStamp,titleEncrypted,contentEncrypted);
     return insertedId;
 }
 
@@ -221,7 +230,7 @@ QString DiaryManager::readEntryContent(int64_t id){
     qint64 updatedAt = QDateTime::currentSecsSinceEpoch();
 
     //todo: insert journal name here instead of hardcoded journal
-    if(!dbManager.updateEntry(id,"Hardcoded journal",updatedAt,titleEncrypted,contentEncrypted)){
+    if(!dbManager.updateEntry(id,updatedAt,titleEncrypted,contentEncrypted)){
         return DiaryError::DatabaseError;
     }
     return DiaryError::None;

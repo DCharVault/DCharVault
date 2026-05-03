@@ -60,7 +60,7 @@ public:
     DiaryManager() = default;
     
     // The worker function: Called later when the user interacts with the UI.
-    [[nodiscard]] DiaryError openDiary(const QString& path, const SecureString& password);
+    [[nodiscard]] DiaryError openDiary(const QString& journalName, const QString& path, const SecureString& password);
 
     std::vector<DiaryEntrySummary> readEntrySummaries();
     QString readEntryContent(int64_t id);
@@ -82,7 +82,7 @@ private:
     EncryptionManager encManager;
 
     // constructor functions
-    [[nodiscard]] DiaryError loadFromDisk();
+    [[nodiscard]] DiaryError loadFromDisk(const QString& path);
     std::vector<DiaryEntrySummary> loadAllMetadata();
 
     // std::vector<DiaryEntrySummary> summaryCache;  still in disccuesion can sigthly increase Ram cosuption while minimizing cpu overhead

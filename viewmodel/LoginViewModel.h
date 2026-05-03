@@ -21,6 +21,9 @@ public:
     Q_INVOKABLE void authenticate(SecurePasswordInput* passwordField, const QString& dbUrl);
     Q_INVOKABLE void updateTitleBar(bool isDark);
 
+    Q_INVOKABLE void createVault(const QString& journalName,SecurePasswordInput* passwordField, const QString& dbUrl);
+
+    Q_INVOKABLE void createVaultAndroid(const QString& journalName,SecurePasswordInput *passwordField);
 signals:
     // Emitted to tell QML to transition to the Home Screen
     void loginSuccess();
