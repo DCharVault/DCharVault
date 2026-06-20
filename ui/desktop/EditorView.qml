@@ -131,7 +131,7 @@ Page {
     Action {
         id: cutAction
         text: "Cut"
-        shortcut: StandardKey.Cut // ctrl+X0
+        shortcut: StandardKey.Cut // ctrl+X
         enabled: editorArea.selectionEnd !== editorArea.selectionStart
         onTriggered: editorArea.cut()
     }
