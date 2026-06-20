@@ -1,4 +1,5 @@
 #include "TextHighlighter.h"
+#include <QBrush>
 
 QQuickTextDocument* TextHighlighter::textDocument() const { return m_textDocument; }
 
