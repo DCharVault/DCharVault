@@ -4,10 +4,22 @@
 QQuickTextDocument* TextHighlighter::textDocument() const { return m_textDocument; }
 
 void TextHighlighter::setTextDocument(QQuickTextDocument *doc) {
-    if (m_textDocument != doc) {
-        m_textDocument = doc;
-        emit textDocumentChanged();
+    if (m_textDocument == doc)
+        return;
+
+    if (m_textDocument)
+        disconnect(m_textDocument, nullptr, this, nullptr);
+
+    m_textDocument = doc;
+
+    if (m_textDocument) {
+        connect(m_textDocument, &QObject::destroyed, this, [this] {
+            m_textDocument = nullptr;
+            emit textDocumentChanged();
+        });
     }
+
+    emit textDocumentChanged();
 }
 
     /**
