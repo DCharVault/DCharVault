@@ -150,7 +150,7 @@ ToolBar {
                         background: null
                         onClicked: {
                             let newSize = parseInt(sizeField.text) + 2
-                            if (newSize <= 72) {
+                            if (newSize <= 88) {
                                 root.fontSizeSelected(newSize)
                                 sizeField.text = newSize.toString()
                             }
