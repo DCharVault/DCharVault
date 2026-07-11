@@ -179,6 +179,11 @@ public:
      */
     Q_INVOKABLE int currentIndentLevel(int cursorPos);
 
+    /**
+     * @brief Returns true if the block at cursorPos is completely empty.
+     */
+    Q_INVOKABLE bool isBlockEmpty(int cursorPos);
+
 signals:
     void textDocumentChanged();
 

@@ -195,7 +195,6 @@ Page {
         text: "Bold"
         shortcut: StandardKey.Bold
         checkable: true
-        checked: editorArea.cursorSelection.font.bold
         onTriggered: richTextController.setBold(editorArea.selectionStart, editorArea.selectionEnd, checked)
     }
     Action {
@@ -203,7 +202,6 @@ Page {
         text: "Italic"
         shortcut: StandardKey.Italic
         checkable: true
-        checked: editorArea.cursorSelection.font.italic
         onTriggered: richTextController.setItalic(editorArea.selectionStart, editorArea.selectionEnd, checked)
     }
     Action {
@@ -211,7 +209,6 @@ Page {
         text: "Underline"
         shortcut: StandardKey.Underline
         checkable: true
-        checked: editorArea.cursorSelection.font.underline
         onTriggered: richTextController.setUnderline(editorArea.selectionStart, editorArea.selectionEnd, checked)
     }
 
@@ -291,8 +288,11 @@ Page {
 
 
         onFontSizeSelected: function(size){
-                                richTextController.setFontSize(editorArea.selectionStart, editorArea.selectionEnd, size)
-                            }
+            richTextController.setFontSize(editorArea.selectionStart, editorArea.selectionEnd, size)
+            if (editorArea.selectionStart === editorArea.selectionEnd) {
+                editorArea.cursorSelection.font.pointSize = size
+            }
+        }
 
         onColorClicked: {
             root.colorMode = 0
@@ -378,14 +378,20 @@ Page {
                     if (editorArea.inputMethodComposing)
                         return
 
-                    let size = editorArea.cursorSelection.font.pointSize
-                    if (size !== undefined && size > 0) {
-                        toolbar.currentFontSize = Math.round(size).toString()
+                    if (richTextController.isBlockEmpty(editorArea.cursorPosition)) {
+                         richTextController.clearCharFormatting(editorArea.cursorPosition, editorArea.cursorPosition)
                     }
 
-                    toolbar.isBold = editorArea.cursorSelection.font.bold
-                    toolbar.isItalic = editorArea.cursorSelection.font.italic
-                    toolbar.isUnderline = editorArea.cursorSelection.font.underline
+                    let format = richTextController.currentCharFormat(editorArea.cursorPosition)
+                    if (format.fontSize !== undefined && format.fontSize > 0) {
+                        toolbar.currentFontSize = Math.round(format.fontSize).toString()
+                    }
+
+
+                    boldAction.checked = format.bold === true
+                    italicAction.checked = format.italic === true
+                    underlineAction.checked = format.underline === true
+
                 }
             }
         }

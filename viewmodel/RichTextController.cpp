@@ -757,3 +757,14 @@ int RichTextController::currentIndentLevel(int cursorPos)
     // Fall back to block indent
     return block.blockFormat().indent();
 }
+
+bool RichTextController::isBlockEmpty(int cursorPos)
+{
+    QTextDocument *doc = document();
+    if(!doc)
+        return true;
+
+    QTextCursor cursor(doc);
+    cursor.setPosition(cursorPos);
+    return cursor.block().text().isEmpty();
+}
