@@ -288,8 +288,11 @@ Page {
 
 
         onFontSizeSelected: function(size){
-                                richTextController.setFontSize(editorArea.selectionStart, editorArea.selectionEnd, size)
-                            }
+            richTextController.setFontSize(editorArea.selectionStart, editorArea.selectionEnd, size)
+            if (editorArea.selectionStart === editorArea.selectionEnd) {
+                editorArea.cursorSelection.font.pointSize = size
+            }
+        }
 
         onColorClicked: {
             root.colorMode = 0
@@ -375,6 +378,9 @@ Page {
                     if (editorArea.inputMethodComposing)
                         return
 
+                    if (richTextController.isBlockEmpty(editorArea.cursorPosition)) {
+                         richTextController.clearCharFormatting(editorArea.cursorPosition, editorArea.cursorPosition)
+                    }
 
                     let format = richTextController.currentCharFormat(editorArea.cursorPosition)
                     if (format.fontSize !== undefined && format.fontSize > 0) {
@@ -385,6 +391,7 @@ Page {
                     boldAction.checked = format.bold === true
                     italicAction.checked = format.italic === true
                     underlineAction.checked = format.underline === true
+
                 }
             }
         }
