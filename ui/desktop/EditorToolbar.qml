@@ -26,6 +26,21 @@ ToolBar {
     signal fontSelected(string fontName)
     signal fontSizeSelected(int sizeFont)
 
+    signal bulletListClicked
+    signal numberedListClicked
+     signal blockquoteClicked
+
+    property string currentBlockType: "normal"
+    onCurrentBlockTypeChanged: {
+        for (var i = 0; i < blockTypeCombo.model.length; ++i) {
+            if (blockTypeCombo.model[i].value === currentBlockType) {
+                blockTypeCombo.currentIndex = i
+                break
+            }
+        }
+    }
+    signal blockTypeSelected(string blockType)
+
     // A tiny border line for desktop mode
     Rectangle {
         width: parent.width
@@ -196,7 +211,104 @@ ToolBar {
                 onClicked: root.underlineClicked()
             }
 
+            Rectangle {
+                width: 1
+                height: 24
+                color: ThemeManager.lineBorder
+                Layout.alignment: Qt.AlignVCenter
+            }
+
+            DCharComboBox {
+                id: blockTypeCombo
+                Layout.preferredWidth: 140
+                Layout.alignment: Qt.AlignVCenter
+                model: ListModel {
+                    ListElement {
+                        text: "Normal"
+                        value: "normal"
+                    }
+                    ListElement {
+                        text: "Heading 1"
+                        value: "heading1"
+                    }
+                    ListElement {
+                        text: "Heading 2"
+                        value: "heading2"
+                    }
+                    ListElement {
+                        text: "Heading 3"
+                        value: "heading3"
+                    }
+                }
+                onActivated: {
+                    root.blockTypeSelected(currentValue)
+                }
+            }
+
+            Rectangle {
+                width: 1
+                height: 24
+                color: ThemeManager.lineBorder
+                Layout.alignment: Qt.AlignVCenter
+            }
+
             ToolButton {
+                text: "•"
+                font.pixelSize: 20
+                checkable: true
+                checked: root.currentBlockType === "bulletList"
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    font: parent.font
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: {
+                    root.bulletListClicked()
+                    checked = Qt.binding(function () {
+                        return root.currentBlockType === "bulletList"
+                    })
+                }
+            }
+            ToolButton {
+                text: "1."
+                checkable: true
+                checked: root.currentBlockType === "numberedList"
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: {
+                    root.numberedListClicked()
+                    checked = Qt.binding(function () {
+                        return root.currentBlockType === "numberedList"
+                    })
+                }
+            }
+            ToolButton {
+                text: "❞"
+                checkable: true
+                checked: root.currentBlockType === "blockquote"
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: {
+                    root.blockquoteClicked()
+                    checked = Qt.binding(function () {
+                        return root.currentBlockType === "blockquote"
+                    })
+                }
+            }
+
+            ToolButton {
+
                 text: "A"
                 font.bold: true
                 palette.buttonText: "red"
