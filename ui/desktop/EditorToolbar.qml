@@ -15,6 +15,7 @@ ToolBar {
     property bool isBold: false
     property bool isItalic: false
     property bool isUnderline: false
+    property bool isStrike: false
 
     signal boldClicked
     signal italicClicked
@@ -28,7 +29,9 @@ ToolBar {
 
     signal bulletListClicked
     signal numberedListClicked
-     signal blockquoteClicked
+    signal blockquoteClicked
+
+    signal strikethroughClicked
 
     property string currentBlockType: "normal"
     onCurrentBlockTypeChanged: {
@@ -186,6 +189,19 @@ ToolBar {
                 }
                 onClicked: root.boldClicked()
             }
+            ToolButton{
+                text: "Strike"
+                checkable: true
+                checked: root.isStrike
+                contentItem: Text{
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: root.strikethroughClicked()
+            }
+
             ToolButton {
                 text: "<i>I</i>"
                 checkable: true

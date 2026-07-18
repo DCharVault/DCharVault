@@ -245,6 +245,15 @@ Page {
         }
     }
 
+    Action {
+        id: strikeThroughAction
+        text: "Strikethrough"
+        onTriggered: {
+            richTextController.toggleStrikethrough(editorArea.selectionStart, editorArea.selectionEnd)
+            editorArea.forceActiveFocus()
+        }
+    }
+
     RichTextController {
         id: richTextController
         textDocument: editorArea.textDocument
@@ -316,6 +325,7 @@ Page {
         isBold: boldAction.checked
         isItalic: italicAction.checked
         isUnderline: underlineAction.checked
+        // isStrikethrough: strikeThroughAction.checked
 
         onBoldClicked: boldAction.trigger()
         onItalicClicked: italicAction.trigger()
@@ -324,6 +334,7 @@ Page {
         onBulletListClicked: bulletListAction.trigger()
         onNumberedListClicked: numberedListAction.trigger()
         onBlockquoteClicked: blockquoteAction.trigger()
+        onStrikethroughClicked: strikeThroughAction.trigger()
 
         onBlockTypeSelected: function (blockType) {
             // Clear existing block format if switching to something specific or normal
@@ -452,6 +463,7 @@ Page {
                     boldAction.checked = format.bold === true
                     italicAction.checked = format.italic === true
                     underlineAction.checked = format.underline === true
+                    strikeThroughAction.checked = format.strikeThrough === true
                 }
             }
         }
