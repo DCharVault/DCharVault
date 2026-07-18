@@ -195,21 +195,54 @@ Page {
         text: "Bold"
         shortcut: StandardKey.Bold
         checkable: true
-        onTriggered: richTextController.setBold(editorArea.selectionStart, editorArea.selectionEnd, checked)
+        onTriggered: richTextController.setBold(editorArea.selectionStart,
+                                                editorArea.selectionEnd,
+                                                checked)
     }
     Action {
         id: italicAction
         text: "Italic"
         shortcut: StandardKey.Italic
         checkable: true
-        onTriggered: richTextController.setItalic(editorArea.selectionStart, editorArea.selectionEnd, checked)
+        onTriggered: richTextController.setItalic(editorArea.selectionStart,
+                                                  editorArea.selectionEnd,
+                                                  checked)
     }
     Action {
         id: underlineAction
         text: "Underline"
         shortcut: StandardKey.Underline
         checkable: true
-        onTriggered: richTextController.setUnderline(editorArea.selectionStart, editorArea.selectionEnd, checked)
+        onTriggered: richTextController.setUnderline(editorArea.selectionStart,
+                                                     editorArea.selectionEnd,
+                                                     checked)
+    }
+    Action {
+        id: bulletListAction
+        text: "Bullet List"
+        onTriggered: {
+            richTextController.toggleBulletList(editorArea.cursorPosition)
+            editorArea.forceActiveFocus()
+        }
+    }
+
+    Action {
+        id: numberedListAction
+        text: "Numbered List"
+        onTriggered: {
+            richTextController.toggleNumberedList(editorArea.cursorPosition)
+            editorArea.forceActiveFocus()
+        }
+    }
+
+    Action {
+        id: blockquoteAction
+        text: "Blockquote"
+        onTriggered: {
+            richTextController.toggleBlockquote(editorArea.selectionStart,
+                                                editorArea.selectionEnd)
+            editorArea.forceActiveFocus()
+        }
     }
 
     RichTextController {
@@ -223,11 +256,13 @@ Page {
         selectedColor: root.colorMode === 0 ? editorArea.cursorSelection.color : "#FFFF00"
         onAccepted: {
             if (colorMode == 0) {
-                richTextController.setTextColor(editorArea.selectionStart, editorArea.selectionEnd, selectedColor)
+                richTextController.setTextColor(editorArea.selectionStart,
+                                                editorArea.selectionEnd,
+                                                selectedColor)
             } else {
                 richTextController.applyHighlight(editorArea.selectionStart,
-                                               editorArea.selectionEnd,
-                                               selectedColor)
+                                                  editorArea.selectionEnd,
+                                                  selectedColor)
             }
             editorArea.forceActiveFocus()
         }
@@ -286,9 +321,31 @@ Page {
         onItalicClicked: italicAction.trigger()
         onUnderlineClicked: underlineAction.trigger()
 
+        onBulletListClicked: bulletListAction.trigger()
+        onNumberedListClicked: numberedListAction.trigger()
+        onBlockquoteClicked: blockquoteAction.trigger()
 
-        onFontSizeSelected: function(size){
-            richTextController.setFontSize(editorArea.selectionStart, editorArea.selectionEnd, size)
+        onBlockTypeSelected: function (blockType) {
+            // Clear existing block format if switching to something specific or normal
+            richTextController.clearBlockFormatting(editorArea.selectionStart,
+                                                    editorArea.selectionEnd)
+            if (blockType === "heading1") {
+                richTextController.setHeading(editorArea.selectionStart,
+                                              editorArea.selectionEnd, 1)
+            } else if (blockType === "heading2") {
+                richTextController.setHeading(editorArea.selectionStart,
+                                              editorArea.selectionEnd, 2)
+            } else if (blockType === "heading3") {
+                richTextController.setHeading(editorArea.selectionStart,
+                                              editorArea.selectionEnd, 3)
+            }
+            // if "normal", clearing was enough
+            editorArea.forceActiveFocus()
+        }
+
+        onFontSizeSelected: function (size) {
+            richTextController.setFontSize(editorArea.selectionStart,
+                                           editorArea.selectionEnd, size)
             if (editorArea.selectionStart === editorArea.selectionEnd) {
                 editorArea.cursorSelection.font.pointSize = size
             }
@@ -378,20 +435,23 @@ Page {
                     if (editorArea.inputMethodComposing)
                         return
 
-                    if (richTextController.isBlockEmpty(editorArea.cursorPosition)) {
-                         richTextController.clearCharFormatting(editorArea.cursorPosition, editorArea.cursorPosition)
+                    if (richTextController.isBlockEmpty(
+                                editorArea.cursorPosition)) {
+                        richTextController.clearCharFormatting(
+                                    editorArea.cursorPosition,
+                                    editorArea.cursorPosition)
                     }
 
-                    let format = richTextController.currentCharFormat(editorArea.cursorPosition)
+                    let format = richTextController.currentCharFormat(
+                            editorArea.cursorPosition)
                     if (format.fontSize !== undefined && format.fontSize > 0) {
-                        toolbar.currentFontSize = Math.round(format.fontSize).toString()
+                        toolbar.currentFontSize = Math.round(
+                                    format.fontSize).toString()
                     }
-
 
                     boldAction.checked = format.bold === true
                     italicAction.checked = format.italic === true
                     underlineAction.checked = format.underline === true
-
                 }
             }
         }
