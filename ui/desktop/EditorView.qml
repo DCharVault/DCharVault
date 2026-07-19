@@ -246,10 +246,32 @@ Page {
     }
 
     Action {
-        id: strikeThroughAction
+        id: strikethroughAction
         text: "Strikethrough"
+        checkable: true
         onTriggered: {
-            richTextController.toggleStrikethrough(editorArea.selectionStart, editorArea.selectionEnd)
+            richTextController.setStrikethrough(editorArea.selectionStart, editorArea.selectionEnd, checked)
+            if (editorArea.selectionStart === editorArea.selectionEnd) {
+                editorArea.cursorSelection.font.strikeout = checked
+            }
+        }
+    }
+
+    Action {
+        id: clearFormattingAction
+        text: "Clear Formatting"
+        onTriggered: {
+            richTextController.clearAllFormatting(editorArea.selectionStart, editorArea.selectionEnd)
+
+            // If there's no selection, also reset the visual cursor
+            if (editorArea.selectionStart === editorArea.selectionEnd) {
+                let format = richTextController.currentCharFormat(editorArea.cursorPosition)
+                editorArea.cursorSelection.font.pointSize = format.fontSize
+                editorArea.cursorSelection.font.bold = false
+                editorArea.cursorSelection.font.italic = false
+                editorArea.cursorSelection.font.underline = false
+                editorArea.cursorSelection.font.strikeout = false
+            }
             editorArea.forceActiveFocus()
         }
     }
@@ -325,7 +347,8 @@ Page {
         isBold: boldAction.checked
         isItalic: italicAction.checked
         isUnderline: underlineAction.checked
-        // isStrikethrough: strikeThroughAction.checked
+        isStrikethrough: strikethroughAction.checked
+
 
         onBoldClicked: boldAction.trigger()
         onItalicClicked: italicAction.trigger()
@@ -334,7 +357,8 @@ Page {
         onBulletListClicked: bulletListAction.trigger()
         onNumberedListClicked: numberedListAction.trigger()
         onBlockquoteClicked: blockquoteAction.trigger()
-        onStrikethroughClicked: strikeThroughAction.trigger()
+        onStrikethroughClicked: strikethroughAction.trigger()
+        onClearFormattingClicked: clearFormattingAction.trigger()
 
         onBlockTypeSelected: function (blockType) {
             // Clear existing block format if switching to something specific or normal
@@ -463,7 +487,7 @@ Page {
                     boldAction.checked = format.bold === true
                     italicAction.checked = format.italic === true
                     underlineAction.checked = format.underline === true
-                    strikeThroughAction.checked = format.strikeThrough === true
+                    strikethroughAction.checked = format.strikethrough === true
                 }
             }
         }
