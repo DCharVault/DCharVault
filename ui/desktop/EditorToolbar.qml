@@ -15,6 +15,7 @@ ToolBar {
     property bool isBold: false
     property bool isItalic: false
     property bool isUnderline: false
+    property bool isStrikethrough: false
 
     signal boldClicked
     signal italicClicked
@@ -28,7 +29,10 @@ ToolBar {
 
     signal bulletListClicked
     signal numberedListClicked
-     signal blockquoteClicked
+    signal blockquoteClicked
+
+    signal strikethroughClicked
+    signal clearFormattingClicked
 
     property string currentBlockType: "normal"
     onCurrentBlockTypeChanged: {
@@ -211,13 +215,6 @@ ToolBar {
                 onClicked: root.underlineClicked()
             }
 
-            Rectangle {
-                width: 1
-                height: 24
-                color: ThemeManager.lineBorder
-                Layout.alignment: Qt.AlignVCenter
-            }
-
             DCharComboBox {
                 id: blockTypeCombo
                 Layout.preferredWidth: 140
@@ -245,11 +242,23 @@ ToolBar {
                 }
             }
 
-            Rectangle {
-                width: 1
-                height: 24
-                color: ThemeManager.lineBorder
-                Layout.alignment: Qt.AlignVCenter
+
+            ToolButton {
+                text: "<s>S</s>"
+                checkable: true
+                checked: root.isStrikethrough
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: {
+                    root.strikethroughClicked()
+                    checked = Qt.binding(function () {
+                        return root.isStrikethrough
+                    })
+                }
             }
 
             ToolButton {
@@ -332,6 +341,18 @@ ToolBar {
                     verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: root.highlighterClicked()
+            }
+
+            ToolButton {
+                text: "Tx"
+                font.pixelSize: 16
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: root.clearFormattingClicked()
             }
 
             ToolButton {
