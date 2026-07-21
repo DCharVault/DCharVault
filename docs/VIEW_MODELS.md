@@ -11,7 +11,7 @@ Manages the authentication flow, vault creation, and system-level UI states.
 
 ### Q_INVOKABLE Methods (Callable from QML)
 *   `void authenticate(SecurePasswordInput* passwordField, const QString& dbUrl)`
-    Attempts to unlock an existing vault by passing the secure password buffer to the `DiaryManager`.
+    Attempts to unlock an existing vault by passing the secure password buffer to the `DiaryManager`. Automatically resolves Android `content://` URIs by importing the database to a private sandbox.
 *   `void createVault(const QString& journalName, SecurePasswordInput* passwordField, const QString& dbUrl)`
     Initializes a new encrypted vault at the specified desktop path.
 *   `void createVaultAndroid(const QString& journalName, SecurePasswordInput* passwordField)`
@@ -103,6 +103,14 @@ A security-focused UI helper component. It intercepts password keystrokes and st
 ### Q_INVOKABLE Methods (Callable from QML)
 *   `void clearPassword()`
     Securely zeroes out and clears the internal password buffer.
+*   `void insertSecureByte(int byteCode)`
+    Hooks for custom in-app keyboards to insert individual bytes.
+*   `void insertSecureText(const QString& text)`
+    Hooks for custom in-app keyboards to insert complete text sequences securely.
+*   `void removeSecureByte()`
+    Removes the last entered character from the secure buffer safely.
+*   `void submitPassword()`
+    Triggers the internal password submission workflow for auth/creation.
 
 ### Public C++ Methods
 *   `int passwordLength() const`
@@ -117,15 +125,23 @@ A security-focused UI helper component. It intercepts password keystrokes and st
 ---
 
 ## `ClipboardSanitizer`
-A background security utility that monitors the operating system's clipboard and automatically wipes it after a predefined timeout to prevent sensitive diary data from leaking to other applications.
+A background security utility that monitors the operating system's clipboard and automatically wipes it after a predefined timeout to prevent sensitive diary data from leaking to other applications. Now configurable and persisted via `DiaryManager`.
+
+### Q_PROPERTIES (Bound to QML)
+*   `uint32_t timeoutSeconds` (READ, WRITE, NOTIFY)
+    The currently active clipboard sanitization timeout duration in seconds.
 
 ### Q_INVOKABLE Methods (Callable from QML)
 *   `void notifyCopied()`
     Triggered by the UI when the user copies text. Initiates the countdown timer for clipboard sanitization.
 *   `void wipeNow()`
     Immediately forces a wipe of the system clipboard.
+*   `void setTimeoutSeconds(uint32_t seconds)`
+    Updates the active clipboard sanitization timeout and persists it to the database via `DiaryManager`.
 
-### Public C++ Methods
+### Public C++ Methods / Slots
+*   `void onVaultOpened()`
+    A slot invoked upon successful login, loading the user-configured clipboard timeout.
 *   `void onSystemClipboardChanged()`
     A Qt Slot connected to the OS clipboard. It detects if the user copies new data externally and aborts the wipe timer if necessary.
 *   `void executeSanitization()`
@@ -137,18 +153,33 @@ A background security utility that monitors the operating system's clipboard and
 
 ---
 
-## `TextHighlighter`
-A utility component that applies a background-color highlight to the currently selected text in a QML TextArea/TextEdit.
+## `RichTextController`
+A utility component that provides robust rich text capabilities, manipulating the underlying `QTextDocument` directly for advanced text editing in QML.
 
 ### Q_PROPERTIES (Bound to QML)
 *   `QQuickTextDocument* textDocument` (READ, WRITE, NOTIFY)
-    The text document instance to apply highlights to.
+    The text document instance to apply formatting and highlights to.
 
 ### Q_INVOKABLE Methods (Callable from QML)
+*   `void setBold(int selStart, int selEnd, bool bold)`
+*   `void setItalic(int selStart, int selEnd, bool italic)`
+*   `void setUnderline(int selStart, int selEnd, bool underline)`
+*   `void setStrikethrough(int selStart, int selEnd, bool strike)`
+    Applies or removes formatting across the specified text range.
+*   `void toggleBulletList(int position)`
+*   `void toggleNumberedList(int position)`
+*   `void toggleBlockquote(int selStart, int selEnd)`
+    Toggles list blocks and blockquotes at the active cursor or selection.
+*   `void setHeading(int selStart, int selEnd, int level)`
+    Applies HTML header styling based on the specified heading level (1-3).
+*   `void clearAllFormatting(int selStart, int selEnd)`
+    Removes all inline and block text formatting.
+*   `void clearBlockFormatting(int selStart, int selEnd)`
+    Removes only block-level formatting for the specified selection.
+*   `void setFontSize(int selStart, int selEnd, qreal size)`
+*   `void setTextColor(int selStart, int selEnd, const QColor &color)`
 *   `void applyHighlight(int selStart, int selEnd, const QColor &color)`
-    Applies a highlight color to the specified text range.
-*   `void removeHighlight(int selStart, int selEnd)`
-    Removes the highlight from the specified text range.
+    Modifies text properties and background colors for rich text visualization.
 
 ### Signals (Emitted to QML)
 *   `void textDocumentChanged()`: Emitted when the associated text document changes.

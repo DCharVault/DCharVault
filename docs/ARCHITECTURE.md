@@ -66,11 +66,15 @@ The ViewModel layer serves as the bridge between the C++ Model and the QML front
 *   **`SessionViewModel`**: Coordinates auto-locking and application session states, interfacing with `SessionManager` and `DiaryManager`.
 *   **`SecurePasswordInput`**: A specialized component for handling password input securely within the UI before it reaches the backend.
 *   **`ClipboardSanitizer`**: A utility to monitor the system clipboard and securely wipe it after a timeout to prevent sensitive data leakage.
-*   **`TextHighlighter`**: A utility component that applies background-color highlighting to currently selected text in a QML TextArea/TextEdit.
+*   **`RichTextController`**: A utility component that provides advanced rich text editing capabilities (bold, italic, underline, strikethrough, headers, lists, blockquotes, and highlighting) for the currently active QML TextArea/TextEdit.
 
 ### 3. The View Layer (`/ui` & `Main.qml`)
 
 The View layer consists of QML files that define the user interface. They bind to the properties and methods exposed by the ViewModels. The UI does not directly interact with the Model layer; all interactions go through the ViewModels.
+
+**Key UI Components & Features:**
+*   **Modular Settings Overlay**: A tabbed configuration interface separating concerns like Appearance and Security.
+*   **Custom Virtual Keyboard (Android)**: A securely integrated `virtualKeyboardPad` tied to `VaultPasswordField` and `SecurePasswordInput` hooks to prevent external keyboard keylogging.
 
 ## Data Flow Example: Creating a New Entry
 

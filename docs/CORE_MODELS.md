@@ -30,6 +30,14 @@ bool isVaultOpened() const;
 
 Returns `true` if a vault is currently unlocked and the master key is active in memory.
 
+#### `setContentUri`
+
+```cpp
+void setContentUri(const QString& contentUri, const QString& localCachePath);
+```
+
+Tracks the original Android `content://` URI and the local sandbox cache path. Used to sync the modified database back to external storage during `lockVault`.
+
 ---
 
 ### Entry Operations (CRUD)
@@ -88,6 +96,22 @@ uint32_t loadSessionTimeout() const;
 ```
 
 Loads the currently configured session timeout value from the database.
+
+### `saveClipboardTimeout`
+
+```cpp
+[[nodiscard]] DiaryError saveClipboardTimeout(uint32_t seconds);
+```
+
+Saves the specified clipboard sanitization timeout value to the database.
+
+### `loadClipboardTimeout`
+
+```cpp
+uint32_t loadClipboardTimeout() const;
+```
+
+Loads the currently configured clipboard sanitization timeout value from the database.
 
 ---
 
@@ -209,6 +233,14 @@ bool createTable();
 ```
 
 Creates the necessary schemas (`entries`, `config`) if they do not already exist.
+
+### `closeDatabase`
+
+```cpp
+void closeDatabase();
+```
+
+Securely closes the active database connection and removes the default connection from `QSqlDatabase`.
 
 ### `insertEntry`
 
