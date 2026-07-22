@@ -9,6 +9,7 @@
 #include <QTextBlockFormat>
 #include <QTextListFormat>
 #include <QTextList>
+#include <QUrl>
 #include <QQmlEngine>
 #include <QVariantMap>
 #include <QStringList>
@@ -27,6 +28,12 @@ class RichTextController : public QObject
     Q_PROPERTY(QQuickTextDocument* textDocument READ textDocument WRITE setTextDocument NOTIFY textDocumentChanged)
 
     /**
+     * @brief Controls whether remote resource loading is blocked on paste.
+     *        Default: true (all remote resources are blocked).
+    */
+
+    Q_PROPERTY(bool blockRemoteResources READ blockRemoteResources WRITE setBlockRemoteResources NOTIFY blockRemoteResourcesChanged)
+    /**
      * @brief Read-only list of system font families, populated once on first access.
      *        Used by QML toolbar to populate font family dropdown.
      */
@@ -38,6 +45,9 @@ public:
     QQuickTextDocument* textDocument() const;
     void setTextDocument(QQuickTextDocument *doc);
     QStringList availableFontFamilies() const;
+
+    bool blockRemoteResources() const;
+    Q_INVOKABLE void setBlockRemoteResources(bool block);
 
     //  Text Style Formatting
 
@@ -186,9 +196,16 @@ public:
 
 signals:
     void textDocumentChanged();
+    void blockRemoteResourcesChanged();
 
 private:
     QQuickTextDocument *m_textDocument = nullptr;
+    bool m_blockRemoteResources = true;
+    /**
+     * @brief Install a resource provider on the QTextDocument that blocks
+     *        remote resources (images, fonts, CSS) to prevent IP leaking.
+     */
+    void installResourceGuard(QTextDocument *doc);
 
     /** @brief Get a valid QTextDocument pointer, or nullptr if unavailable. */
     QTextDocument* document() const;
@@ -204,6 +221,9 @@ private:
 
     /** @brief Maximum indent depth. */
     static constexpr int kMaxIndentLevel = 8;
+
+    /** @brief Maximum allowed size for data: URIs (5 MB). Prevents clipboard-based DoS. */
+    static constexpr int kMaxDataUriBytes = 5 * 1024 * 1024;
 
     /** @brief Heading font sizes: index 0 unused, 1=H1, 2=H2, 3=H3. */
     static constexpr int kHeadingSizes[] = {0, 28, 22, 18};
