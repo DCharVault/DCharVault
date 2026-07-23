@@ -28,15 +28,15 @@ class RichTextController : public QObject
     Q_PROPERTY(QQuickTextDocument* textDocument READ textDocument WRITE setTextDocument NOTIFY textDocumentChanged)
 
     /**
-     * @brief Controls whether remote resource loading is blocked on paste.
-     *        Default: true (all remote resources are blocked).
+      * @brief Controls whether remote resource loading is blocked in the editor document.
+      *        Default: true (remote resources are blocked).
     */
-
     Q_PROPERTY(bool blockRemoteResources READ blockRemoteResources WRITE setBlockRemoteResources NOTIFY blockRemoteResourcesChanged)
+
     /**
      * @brief Read-only list of system font families, populated once on first access.
      *        Used by QML toolbar to populate font family dropdown.
-     */
+    */
     Q_PROPERTY(QStringList availableFontFamilies READ availableFontFamilies CONSTANT)
 
 public:

@@ -68,9 +68,10 @@ void RichTextController::installResourceGuard(QTextDocument *doc)
 
         // Allow inline data: URIs (base64 images) —> but cap size to prevent DoS
         if (scheme == QLatin1String("data")) {
-            if (url.toString().size() > kMaxDataUriBytes) {
+            const QString uri = url.toString(QUrl::FullyEncoded);
+            if (uri.size() > kMaxDataUriBytes) {
 #ifdef QT_DEBUG
-                qDebug() << "[SEC] Blocked oversized data: URI (" << url.toString().size() << " bytes, limit:" << kMaxDataUriBytes << ")";
+                qDebug() << "[SEC] Blocked oversized data: URI (" << uri.size() << " chars, limit:" << kMaxDataUriBytes << ")";
 #endif
                 return QVariant(QByteArray()); // blocked — too large
             }
@@ -82,6 +83,9 @@ void RichTextController::installResourceGuard(QTextDocument *doc)
         qDebug() << "[SEC] Blocked remote resource load:" << url.toString();
 #endif
         return QVariant(QByteArray()); // return non-null empty -> Qt skips the fetch
+    });
+    QObject::connect(this, &QObject::destroyed, doc, [doc] {
+        doc->setResourceProvider({});
     });
 }
 
