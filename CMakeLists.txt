@@ -176,6 +176,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/DiaryViewModel.cpp
         viewmodel/DiaryListModel.cpp
         viewmodel/SecurePasswordInput.cpp
+        viewmodel/SecureNetworkManager.cpp
         viewmodel/ClipboardSanitizer.cpp
         viewmodel/SessionViewModel.cpp
         viewmodel/TextHighlighter.cpp
