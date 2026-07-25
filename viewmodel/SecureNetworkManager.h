@@ -22,16 +22,54 @@ protected:
 class SecureNetworkManager : public QNetworkAccessManager{
     Q_OBJECT
 public:
-    SecureNetworkManager(QObject *parent = nullptr);
+    SecureNetworkManager(bool blockRemote = true, QObject *parent = nullptr);
+    void setBlockRemote(bool block);
 
 protected:
     QNetworkReply *createRequest(Operation op, const QNetworkRequest &request, QIODevice *outgoingData=nullptr) override;
+
+private:
+    bool m_blockRemote;
+
 };
 
 
 class SecureNetworkManagerFactory : public QQmlNetworkAccessManagerFactory{
 public:
+    SecureNetworkManagerFactory(bool blockRemote=true);
+
+    void setBlockRemote(bool block);
+    bool blockRemote() const;
+
     QNetworkAccessManager *create(QObject *parent) override;
+
+private:
+    bool m_blockRemote;
 };
 
 #endif // SECURENETWORKMANAGER_H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

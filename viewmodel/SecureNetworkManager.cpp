@@ -1,6 +1,6 @@
 #include "SecureNetworkManager.h"
 
-#include<QTimer>
+#include<QMetaObject>
 #include<QString>
 
 // BlockedNetworkReply
@@ -13,10 +13,11 @@ BlockedNetworkReply::BlockedNetworkReply(const QNetworkRequest &req, QNetworkAcc
     setError(QNetworkReply::ContentAccessDenied,"Blocked for Privacy");
 
     setOpenMode(QIODevice::ReadOnly);
-    QTimer::singleShot(0,this,[this](){
-       emit errorOccurred(QNetworkReply::ContentAccessDenied);
-       emit finished();
-    });
+
+    QMetaObject::invokeMethod(this, [this]() {
+        emit errorOccurred(QNetworkReply::ContentAccessDenied);
+        emit finished();
+    }, Qt::QueuedConnection);
 }
 
 void BlockedNetworkReply::abort(){}
@@ -33,14 +34,23 @@ qint64 BlockedNetworkReply::readData(char *data, qint64 maxlen)
 
 
 // SecureNetworkManager
-SecureNetworkManager::SecureNetworkManager(QObject *parent)
-    :QNetworkAccessManager(parent)
+SecureNetworkManager::SecureNetworkManager(bool blockRemote, QObject *parent)
+    :QNetworkAccessManager(parent), m_blockRemote(blockRemote)
 {}
+
+void SecureNetworkManager::setBlockRemote(bool block)
+{
+    m_blockRemote = block;
+}
 
 QNetworkReply *SecureNetworkManager::createRequest(Operation op, const QNetworkRequest &request, QIODevice *outgoingData)
 {
+    if (!m_blockRemote) {
+        return QNetworkAccessManager::createRequest(op, request, outgoingData);
+    }
+
     QString scheme = request.url().scheme().toLower();
-    if (scheme == "qrc" || scheme == "file" || scheme == "data"){
+    if (scheme == QLatin1String("qrc") || scheme == QLatin1String("data") || scheme.isEmpty()){
         return QNetworkAccessManager::createRequest(op, request, outgoingData);
     }else{
         qWarning() << "SECURITY: Blocked unauthorized network request to:" << request.url().toString();
@@ -53,7 +63,19 @@ QNetworkReply *SecureNetworkManager::createRequest(Operation op, const QNetworkR
 
 
 // SecureNetworkManagerFactory
+SecureNetworkManagerFactory::SecureNetworkManagerFactory(bool blockRemote) : m_blockRemote(blockRemote)
+{}
+
+void SecureNetworkManagerFactory::setBlockRemote(bool block)
+{
+    m_blockRemote = block;
+}
+bool SecureNetworkManagerFactory::blockRemote() const
+{
+    return m_blockRemote;
+}
+
 QNetworkAccessManager *SecureNetworkManagerFactory::create(QObject *parent)
 {
-    return new SecureNetworkManager(parent);
+    return new SecureNetworkManager(m_blockRemote,parent);
 }
