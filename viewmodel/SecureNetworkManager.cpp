@@ -3,6 +3,10 @@
 #include<QMetaObject>
 #include<QString>
 
+#ifdef QT_DEBUG
+#include <QDebug>
+#endif
+
 // BlockedNetworkReply
 BlockedNetworkReply::BlockedNetworkReply(const QNetworkRequest &req, QNetworkAccessManager::Operation op, QObject *parent)
     : QNetworkReply(parent)
@@ -21,6 +25,9 @@ BlockedNetworkReply::BlockedNetworkReply(const QNetworkRequest &req, QNetworkAcc
 }
 
 void BlockedNetworkReply::abort(){}
+
+qint64 BlockedNetworkReply::bytesAvailable() const { return 0; }
+bool BlockedNetworkReply::isSequential() const { return true; }
 
 qint64 BlockedNetworkReply::readData(char *data, qint64 maxlen)
 {
@@ -49,15 +56,16 @@ QNetworkReply *SecureNetworkManager::createRequest(Operation op, const QNetworkR
         return QNetworkAccessManager::createRequest(op, request, outgoingData);
     }
 
-    QString scheme = request.url().scheme().toLower();
+    const QString scheme = request.url().scheme().toLower();
     if (scheme == QLatin1String("qrc") || scheme == QLatin1String("data") || scheme.isEmpty()){
         return QNetworkAccessManager::createRequest(op, request, outgoingData);
-    }else{
-        qWarning() << "SECURITY: Blocked unauthorized network request to:" << request.url().toString();
-        return new BlockedNetworkReply(request, op, this);
     }
-}
 
+#ifdef QT_DEBUG
+    qDebug() << "[SEC][QNAM] Blocked remote network request:" << request.url().toString();
+#endif
+    return new BlockedNetworkReply(request, op, this);
+}
 
 
 

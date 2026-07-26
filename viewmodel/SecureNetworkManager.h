@@ -6,23 +6,27 @@
 #include <QNetworkRequest>
 #include <QQmlNetworkAccessManagerFactory>
 
-class BlockedNetworkReply : public QNetworkReply{
+class BlockedNetworkReply : public QNetworkReply
+{
     Q_OBJECT
 public:
-    BlockedNetworkReply(const QNetworkRequest &req,QNetworkAccessManager::Operation op, QObject *parent = nullptr);
+    explicit BlockedNetworkReply(const QNetworkRequest &req,QNetworkAccessManager::Operation op, QObject *parent = nullptr);
 
     void abort() override;
+
+    qint64 bytesAvailable() const override;
+    bool isSequential() const override;
+
 protected:
     qint64 readData(char *data, qint64 maxlen) override;
-
-
 };
 
 
-class SecureNetworkManager : public QNetworkAccessManager{
+class SecureNetworkManager : public QNetworkAccessManager
+{
     Q_OBJECT
 public:
-    SecureNetworkManager(bool blockRemote = true, QObject *parent = nullptr);
+    explicit SecureNetworkManager(bool blockRemote = true, QObject *parent = nullptr);
     void setBlockRemote(bool block);
 
 protected:
@@ -33,10 +37,9 @@ private:
 
 };
 
-
 class SecureNetworkManagerFactory : public QQmlNetworkAccessManagerFactory{
 public:
-    SecureNetworkManagerFactory(bool blockRemote=true);
+    explicit SecureNetworkManagerFactory(bool blockRemote=true);
 
     void setBlockRemote(bool block);
     bool blockRemote() const;
@@ -48,28 +51,3 @@ private:
 };
 
 #endif // SECURENETWORKMANAGER_H
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
