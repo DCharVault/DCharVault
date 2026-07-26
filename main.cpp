@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QWindow>
 #include <sodium.h>
-#include <QQmlContext>// Required to inject C++ into QML
+#include <QQmlContext>
 #include <QQuickStyle>
 #include "model/DiaryManager.h"
 #include"viewmodel/SecurePasswordInput.h"
@@ -11,6 +11,7 @@
 #include "viewmodel/DiaryViewModel.h"
 #include "viewmodel/SessionViewModel.h"
 #include "viewmodel/DiaryListModel.h"
+#include "viewmodel/SecureNetworkManager.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -25,23 +26,19 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
-    // SECURITY CHECK
     if (sodium_init() < 0) {
         qCritical() << "FATAL: Libsodium failed to initialize!";
         return -1;
     }
     qInfo() << "SUCCESS: Libsodium initialized. Architecture is Secure.";
 
-    // Boot Backend
     DiaryManager diaryManager;
 
-    // Boot View Model
     LoginViewModel loginVM(diaryManager);
     DiaryViewModel diaryVM(diaryManager);
     SessionViewModel diarySM(&diaryManager);
     DiaryListModel diaryListModel(diaryManager);
 
-    // session wiring
     QObject::connect(&loginVM, &LoginViewModel::loginSuccess,
                      &diarySM, &SessionViewModel::onVaultOpened);
 
@@ -49,16 +46,15 @@ int main(int argc, char *argv[])
                      &diarySM, &SessionViewModel::onApplicationStateChanged);
 
 
-    // UI LAUNCHER
     QQuickStyle::setStyle("Basic");
-    QQmlApplicationEngine engine;
 
-    // register type SecurePasswordInput
+    SecureNetworkManagerFactory namFactory;
+
+    QQmlApplicationEngine engine;
+    engine.setNetworkAccessManagerFactory(&namFactory);
+
     qmlRegisterType<SecurePasswordInput>("Vault.Security",1,0,"SecurePasswordInput");
 
-    // --- 3. INJECT THE BRIDGE INTO QML ---
-    // This creates a global variable named "loginViewModel" inside your QML files,
-    // pointing directly to your C++ loginVM object.
     engine.rootContext()->setContextProperty("loginViewModel", &loginVM);
     engine.rootContext()->setContextProperty("diaryViewModel",&diaryVM);
     engine.rootContext()->setContextProperty("diarySessionModel",&diarySM);
@@ -66,7 +62,7 @@ int main(int argc, char *argv[])
 
 
     engine.loadFromModule("DCharVault", "Main");
-    // Check if it loaded
+
     if (engine.rootObjects().isEmpty())
         return -1;
 
@@ -77,7 +73,6 @@ int main(int argc, char *argv[])
     const QList<QObject *> rootObjects = engine.rootObjects();
 
     if (!rootObjects.isEmpty()) {
-        // use constFirst() or at(0) — neither triggers a detach/copy
         QWindow *window = qobject_cast<QWindow *>(rootObjects.constFirst());
         if (window) {
             HWND hwnd = (HWND)window->winId();
