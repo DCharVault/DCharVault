@@ -8,6 +8,10 @@
 #include <QFontDatabase>
 #include <QUrl>
 
+#ifdef QT_DEBUG
+#include <QDebug>
+#endif
+
 //Construction & Document Binding
 
 RichTextController::RichTextController(QObject *parent)
@@ -35,9 +39,67 @@ void RichTextController::setTextDocument(QQuickTextDocument *doc)
             m_textDocument = nullptr;
             emit textDocumentChanged();
         });
+
+        // install resource guard to block remote tracking on paste
+        QTextDocument *tdoc = m_textDocument->textDocument();
+        if (tdoc)
+            installResourceGuard(tdoc);
     }
 
     emit textDocumentChanged();
+}
+
+void RichTextController::installResourceGuard(QTextDocument *doc)
+{
+    if (!doc)
+        return;
+
+    doc->setResourceProvider([this](const QUrl &url) -> QVariant {
+        // when blocking is disabled, let Qt handle everything normally
+        if (!m_blockRemoteResources)
+            return QVariant();
+
+        const QString scheme = url.scheme().toLower();
+
+        // Allow Qt embedded resources (bundled with app)
+        if (scheme == QLatin1String("qrc")) {
+            return QVariant(); // pass-through to Qt default handling
+        }
+
+        // Allow inline data: URIs (base64 images) —> but cap size to prevent DoS
+        if (scheme == QLatin1String("data")) {
+            const QString uri = url.toString(QUrl::FullyEncoded);
+            if (uri.size() > kMaxDataUriBytes) {
+#ifdef QT_DEBUG
+                qDebug() << "[SEC] Blocked oversized data: URI (" << uri.size() << " chars, limit:" << kMaxDataUriBytes << ")";
+#endif
+                return QVariant(QByteArray()); // blocked — too large
+            }
+            return QVariant(); // pass-through —> safe embedded data
+        }
+
+        // Block everything else: http, https, ftp, file, etc.
+#ifdef QT_DEBUG
+        qDebug() << "[SEC] Blocked remote resource load:" << url.toString();
+#endif
+        return QVariant(QByteArray()); // return non-null empty -> Qt skips the fetch
+    });
+    QObject::connect(this, &QObject::destroyed, doc, [doc] {
+        doc->setResourceProvider({});
+    });
+}
+
+bool RichTextController::blockRemoteResources() const
+{
+    return m_blockRemoteResources;
+}
+
+void RichTextController::setBlockRemoteResources(bool block)
+{
+    if (m_blockRemoteResources == block)
+        return;
+    m_blockRemoteResources = block;
+    emit blockRemoteResourcesChanged();
 }
 
 QTextDocument* RichTextController::document() const
