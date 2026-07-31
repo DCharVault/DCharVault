@@ -171,6 +171,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/SessionViewModel.h
         viewmodel/TextHighlighter.h
         viewmodel/RichTextController.h
+        viewmodel/DiarySearchModel.h
 
         viewmodel/LoginViewModel.cpp
         viewmodel/DiaryViewModel.cpp
@@ -181,6 +182,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/SessionViewModel.cpp
         viewmodel/TextHighlighter.cpp
         viewmodel/RichTextController.cpp
+        viewmodel/DiarySearchModel.cpp
 )
 
 # The auto-generated qmltyperegistrations.cpp does #include <TextHighlighter.h>

@@ -12,6 +12,7 @@
 #include "viewmodel/SessionViewModel.h"
 #include "viewmodel/DiaryListModel.h"
 #include "viewmodel/SecureNetworkManager.h"
+#include "viewmodel/DiarySearchModel.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -39,6 +40,9 @@ int main(int argc, char *argv[])
     SessionViewModel diarySM(&diaryManager);
     DiaryListModel diaryListModel(diaryManager);
 
+    DiarySearchModel diarySearchModel;
+    diarySearchModel.setSourceModel(&diaryListModel);
+
     QObject::connect(&loginVM, &LoginViewModel::loginSuccess,
                      &diarySM, &SessionViewModel::onVaultOpened);
 
@@ -59,7 +63,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("diaryViewModel",&diaryVM);
     engine.rootContext()->setContextProperty("diarySessionModel",&diarySM);
     engine.rootContext()->setContextProperty("diaryListModel",&diaryListModel);
-
+    engine.rootContext()->setContextProperty("diarySearchModel",&diarySearchModel);
 
     engine.loadFromModule("DCharVault", "Main");
 
