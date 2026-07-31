@@ -60,6 +60,19 @@ Item {
                     leftPadding: 12
                     placeholderText: ""
 
+                    Timer {
+                        id: searchDebounceTimer
+                        interval: 300
+                        repeat: false
+                        onTriggered: {
+                            diarySearchModel.searchQuery = searchInput.text
+                        }
+                    }
+
+                    onTextEdited: {
+                        searchDebounceTimer.restart()
+                    }
+
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left
@@ -117,7 +130,7 @@ Item {
                     active: true
                 }
 
-                model: diaryListModel
+                model: diarySearchModel
 
                 delegate: Rectangle {
                     id: delegateRoot
