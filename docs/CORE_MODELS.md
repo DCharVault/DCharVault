@@ -1,3 +1,8 @@
+---
+layout: default
+title: Core Models APIs
+---
+
 # Core Models API Documentation
 
 This document defines the core backend engine of DCharVault. These classes, located in the `/model` directory, are strictly responsible for data orchestration, cryptographic security, and SQLite persistence. They contain no UI logic.
