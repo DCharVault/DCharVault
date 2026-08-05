@@ -1,3 +1,7 @@
+---
+layout: default
+title: View-Model APIs
+---
 # ViewModel API Documentation
 
 This document defines the ViewModel layer of DCharVault. Located in the `/viewmodel` directory, these classes inherit from `QObject` and act as the secure bridge between the QML frontend and the C++ Core Models. They manage UI state, handle user input securely, and emit signals to update the UI without exposing backend cryptography.
