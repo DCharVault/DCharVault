@@ -10,6 +10,15 @@ DCharVault is an offline-first, highly secure diary and journaling application. 
 
 The application follows the **Model-View-ViewModel (MVVM)** architectural pattern, which cleanly separates the core security and data handling logic (Model) from the UI presentation (View), with the ViewModel acting as the intermediary.
 
+<details>
+<summary><strong>Fallback for GitHub Pages (optional, dependency-free)</strong></summary>
+
+If your GitHub Pages theme/build does not render Mermaid, use this static fallback image:
+
+![Architecture Diagram Fallback](assets/architecture-diagram-fallback.svg)
+
+</details>
+
 ```mermaid
 graph TD
     subgraph View Layer [QML UI]
