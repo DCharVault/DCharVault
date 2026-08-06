@@ -11,4 +11,5 @@ Welcome to the techincal documentation.
 -[View Models](VIEW_MODELS.md)
 
 ## Mermaid Rendering Note
-If Mermaid diagrams do not render on your GitHub Pages deployment, the Architecture document includes an optional static SVG fallback with no extra dependency.
+GitHub Pages rendering is layout-driven and reads Mermaid blocks directly from Markdown files.
+To disable Mermaid rendering, set `mermaid.enabled: false` in `/home/runner/work/DCharVault/DCharVault/_config.yml`.

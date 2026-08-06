@@ -4,3 +4,7 @@ description: Technical Documentation For DCharVault Project
 theme: minima
 
 markdown: kramdown
+
+mermaid:
+  enabled: true
+  version: "11.6.0"
