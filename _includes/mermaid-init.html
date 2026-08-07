@@ -1,6 +1,10 @@
 {% if site.mermaid and site.mermaid.enabled %}
 <script type="module">
   const blocks = document.querySelectorAll('pre > code.language-mermaid');
+  if (!blocks.length) {
+    return;
+  }
+
   for (const code of blocks) {
     const container = document.createElement('div');
     container.className = 'mermaid';
@@ -8,7 +12,7 @@
     code.parentElement.replaceWith(container);
   }
 
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@{{ site.mermaid.version }}/dist/mermaid.esm.min.mjs';
+  import mermaid from '{{ "/assets/js/mermaid.esm.min.mjs" | relative_url }}';
   mermaid.initialize({ startOnLoad: true, securityLevel: 'strict' });
 </script>
 {% endif %}
