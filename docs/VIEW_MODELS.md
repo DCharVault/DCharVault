@@ -2,6 +2,8 @@
 
 This document defines the ViewModel layer of DCharVault. Located in the `/viewmodel` directory, these classes inherit from `QObject` and act as the secure bridge between the QML frontend and the C++ Core Models. They manage UI state, handle user input securely, and emit signals to update the UI without exposing backend cryptography.
 
+> For a full reference on the error codes these ViewModels receive from the Model layer, see the [Error Handling guide](./error-handling).
+
 ## `LoginViewModel`
 Manages the authentication flow, vault creation, and system-level UI states.
 
@@ -41,7 +43,7 @@ Manages the state and operations for the currently active diary entry.
 
 ### Signals (Emitted to QML)
 *   `void entrySavedSuccessfully(const qint64 savedId, const QString& finalizeTitle)`: Emitted upon successful database persistence.
-*   `void entrySaveFailed(const QString& errorMessage)`: Emitted if the encryption or database insertion fails.
+*   `void entrySaveFailed(const QString& errorMessage)`: Emitted if the encryption or database insertion fails. The `errorMessage` string is derived from the underlying [`DiaryError`](./error-handling#the-diaryerror-enum) code.
 *   `void entryDeletedSuccessfully()`: Emitted when an entry is successfully purged.
 *   `void entryDeleteFailed()`: Emitted if the deletion operation fails.
 

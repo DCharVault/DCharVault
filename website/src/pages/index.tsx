@@ -9,46 +9,61 @@ type FeatureItem = {
   title: string;
   description: ReactNode;
   link: string;
+  badge: string;
 };
-
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Secure Architecture',
+    title: 'Architecture',
+    badge: 'MVVM · C++20 · Qt 6.8',
     description: (
       <>
-        Dive into the <code>EncryptionManager</code>, secure memory allocators, 
-        and session timeout implementations that keep the vault secure.
+        Understand the MVVM layering, data flow from QML to SQLite, and how the
+        cryptographic pipeline prevents plaintext from ever touching disk.
       </>
     ),
     link: '/docs/ARCHITECTURE',
   },
   {
-    title: 'Core Models',
+    title: 'Core Models API',
+    badge: 'DiaryManager · EncryptionManager · SecureAllocator',
     description: (
       <>
-        Understand the foundational C++ structures backing the app, including 
-        Diary Entries, Databases, and the main Vault Model.
+        Full API reference for the C++ backend — vault lifecycle, CRUD operations,
+        Argon2id key derivation, XChaCha20-Poly1305 encryption, and secure memory types.
       </>
     ),
     link: '/docs/CORE_MODELS',
   },
   {
-    title: 'UI & ViewModels',
+    title: 'ViewModel API',
+    badge: 'QObject · Signals · Q_INVOKABLES',
     description: (
       <>
-        Explore the QML desktop/Android interfaces and the reactive ViewModels 
-        like the <code>RichTextController</code> and clipboard sanitizers.
+        The QML-facing bridge layer — <code>LoginViewModel</code>, <code>DiaryListModel</code>,
+        clipboard sanitization, rich text editing, and secure password input hooks.
       </>
     ),
     link: '/docs/VIEW_MODELS',
   },
 ];
 
-function Feature({title, description, link}: FeatureItem) {
+function Feature({title, description, link, badge}: FeatureItem) {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center padding-horiz--md padding-vert--md">
+        <div style={{ marginBottom: '0.5rem' }}>
+          <span style={{
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--ifm-color-primary)',
+            opacity: 0.85,
+          }}>
+            {badge}
+          </span>
+        </div>
         <Heading as="h3">{title}</Heading>
         <p>{description}</p>
         <Link className="button button--secondary button--sm" to={link}>
@@ -68,11 +83,16 @@ function HomepageHeader() {
           {siteConfig.title}
         </Heading>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
-        <div style={{ marginTop: '2rem' }}>
+        <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/intro">
+            Get Started →
+          </Link>
           <Link
             className="button button--secondary button--lg"
             to="/docs/ARCHITECTURE">
-            Explore Documentation
+            Explore Architecture
           </Link>
         </div>
       </div>
@@ -85,7 +105,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={`${siteConfig.title} Documentation`}
-      description="Technical documentation for DCharVault - Secure, encrypted diary and vault application">
+      description="Technical documentation for DCharVault - Secure, zero-knowledge, encrypted diary and journaling application built on C++20 and Qt 6.8">
       <HomepageHeader />
       <main>
         <section className="padding-vert--xl">

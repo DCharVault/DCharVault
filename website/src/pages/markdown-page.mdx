@@ -1,7 +1,5 @@
----
-title: Markdown page example
----
+import {Redirect} from '@docusaurus/router';
 
-# Markdown page example
-
-You don't need React to write simple standalone pages.
+export default function MarkdownPage() {
+  return <Redirect to="/docs/intro" />;
+}
