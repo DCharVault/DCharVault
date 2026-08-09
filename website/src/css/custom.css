@@ -1,0 +1,94 @@
+:root {
+  --ifm-color-primary: #C9881C; 
+  --ifm-color-primary-dark: #b57a19;
+  --ifm-color-primary-darker: #ab7317;
+  --ifm-color-primary-darkest: #8d5f13;
+  --ifm-color-primary-light: #dc961e;
+  --ifm-color-primary-lighter: #df9e2d;
+  --ifm-color-primary-lightest: #e6b45a;
+
+  --ifm-background-color: #FAF3EC; 
+  --ifm-background-surface-color: #FFFFFF;
+  --ifm-navbar-background-color: #FAF3EC; 
+  --ifm-footer-background-color: #F5E6C8; 
+
+  --ifm-font-color-base: #2B1A1F; 
+  --ifm-color-content-secondary: #8A6A75; 
+  --ifm-border-color: #E5D5C8; 
+
+  --ifm-global-radius: 12px; 
+  --ifm-button-border-radius: 999px; 
+
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-footer-padding-vertical: 1rem !important; 
+  --ifm-footer-padding-horizontal: 1rem !important;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #E0A526; 
+  --ifm-color-primary-dark: #ca9422;
+  --ifm-color-primary-darker: #bf8c20;
+  --ifm-color-primary-darkest: #9d731a;
+  --ifm-color-primary-light: #e3af3c;
+  --ifm-color-primary-lighter: #e5b447;
+  --ifm-color-primary-lightest: #ecc469;
+
+  --ifm-background-color: #1A0F18; 
+  --ifm-background-surface-color: #2A1620; 
+  --ifm-navbar-background-color: #1A0F18;
+  --ifm-footer-background-color: #2A1620; 
+
+  --ifm-font-color-base: #F3E9E4; 
+  --ifm-color-content-secondary: #A98B95;
+  --ifm-border-color: #4A2438; 
+
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+
+#__docusaurus {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1; 
+}
+
+.footer {
+  margin-top: auto; 
+  padding: 1rem !important;
+}
+
+
+.theme-code-block {
+  background-color: var(--ifm-background-surface-color) !important;
+  border: 1px solid var(--ifm-border-color);
+}
+
+[data-theme='dark'] .theme-code-block {
+  background-color: #34192A !important; 
+}
+
+.button {
+  transition: all 0.2s ease;
+}
+
+.button--secondary {
+  background-color: var(--ifm-background-surface-color);
+  border-color: var(--ifm-border-color);
+  color: var(--ifm-font-color-base);
+}
+
+[data-theme='dark'] .button--secondary {
+  background-color: #34192A; 
+  border: 1px solid #4A2438;
+}
+
+[data-theme='dark'] .button--secondary:hover {
+  background-color: #4A2438; 
+}
