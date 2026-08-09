@@ -300,7 +300,7 @@ Updates the name of the journal in the database.
 bool setShareableStatus(const bool isShareable);
 ```
 
-Sets the shareable status of the database.
+Persists whether the vault database file should be treated as shareable (e.g., accessible via Android `content://` URI sharing). When `true`, `lockVault` will sync the modified database back to the user-selected external location. Returns `false` if the config write fails.
 
 ### `setSpecialStatus`
 
@@ -308,7 +308,7 @@ Sets the shareable status of the database.
 bool setSpecialStatus(const QString& status);
 ```
 
-Sets a special status flag in the database.
+Sets an application-defined status string in the `config` table under the `special_status` key. This is a general-purpose persistence mechanism used to store flags such as "first_launch" or "pending_migration". Returns `false` if the write fails.
 
 ### `getConfigValue`
 
@@ -409,27 +409,126 @@ Returns the current state of the session (`Active`, `Locked`, or `LoggedOut`).
 
 ## `SecureAllocator`
 
-A custom C++ STL-compatible memory allocator designed to handle sensitive data safely.
+A custom C++ STL-compatible memory allocator that wraps Libsodium's guarded memory management. It is the foundation of the `SecureString` and `SecureVector` types used throughout the codebase for sensitive data.
 
-- **Mechanism:** Wraps `sodium_malloc` and `sodium_free`.
-- **Security:** Uses OS guard pages to detect out-of-bounds access, pins memory in RAM to prevent disk swapping, and securely zeroes memory before deallocation.
-- **Usage:** Powers the `SecureString` and `SecureVector` types used for passwords and cryptographic keys.
+### Security Properties
+
+| Property | Mechanism |
+|:---|:---|
+| **Guard pages** | OS-level guard pages are placed before and after each allocation to detect out-of-bounds access |
+| **Memory pinning** | Memory is locked in RAM via `mlock()` / `VirtualLock()`, preventing it from being swapped to the pagefile or disk |
+| **Secure zeroing** | Before deallocation, memory is overwritten with zeros using `sodium_memzero()`, which is not optimised away by the compiler |
+| **Canary values** | Libsodium places canary values adjacent to each allocation to detect overflow at free-time |
+
+### Key Methods (STL Allocator Interface)
+
+#### `allocate`
+
+```cpp
+T* allocate(std::size_t n);
+```
+
+Allocates `n` objects of type `T` using `sodium_malloc`. Throws `std::bad_alloc` if the allocation fails (e.g., system memory lock limit exceeded). This replaces the standard `::operator new`.
+
+#### `deallocate`
+
+```cpp
+void deallocate(T* p, std::size_t n) noexcept;
+```
+
+Securely zeroes and frees the allocation using `sodium_free`. The zero-wipe is unconditional and compiler-resistant — it always runs even in optimised builds.
+
+### Usage
+
+`SecureAllocator` is not typically used directly. Instead, use the type aliases it powers:
+
+```cpp
+// A std::basic_string using SecureAllocator
+using SecureString = std::basic_string<char, std::char_traits<char>, SecureAllocator<char>>;
+
+// A std::vector using SecureAllocator
+using SecureVector = std::vector<uint8_t, SecureAllocator<uint8_t>>;
+```
+
+:::warning
+Do **not** mix `SecureAllocator`-backed types with standard allocator types without explicitly zeroing the data first. Passing a `SecureString` to a function that copies it into a `std::string` will silently place the sensitive data in an unprotected heap allocation.
+:::
 
 ---
 
-## Data Structures
+## Data Structures & Types
+
+### `DiaryError` Enum
+
+The primary error type returned by all fallible Model operations. See the [Error Handling guide](./error-handling) for the full reference and recovery strategies.
+
+```cpp
+enum class DiaryError {
+    Success,
+    VaultAlreadyOpen, VaultNotOpen,
+    AuthenticationFailed, InvalidMAC,
+    DatabaseNotFound, DatabaseCorrupt,
+    EntryNotFound,
+    EncryptionFailed, DecryptionFailed,
+    DatabaseWriteFailed, DatabaseReadFailed,
+    ConfigWriteFailed, ConfigReadFailed,
+    SecureMemoryError, UnknownError,
+};
+```
+
+---
+
+### `SessionState` Enum
+
+Represents the current lifecycle state of the user session. Returned by `SessionManager::state()`.
+
+```cpp
+enum class SessionState {
+    Active,     // Vault is unlocked and the user is interacting with the app
+    Locked,     // Vault is locked due to inactivity or an explicit lockNow() call
+    LoggedOut,  // No vault is loaded; the app is at the login screen
+};
+```
+
+| State | Description |
+|:---|:---|
+| `Active` | The master key is in memory. Entries can be read and written. |
+| `Locked` | The session timed out or the user locked manually. The UI shows the re-authentication screen. |
+| `LoggedOut` | No vault is open. `isVaultOpened()` returns `false`. |
+
+---
+
+### `SecureString`
+
+```cpp
+using SecureString = std::basic_string<char, std::char_traits<char>, SecureAllocator<char>>;
+```
+
+A `std::string`-compatible type backed by `SecureAllocator`. Used exclusively for storing master passwords in memory before they are passed to the `EncryptionManager`. Its contents are automatically zeroed on destruction.
+
+---
+
+### `SecureVector`
+
+```cpp
+using SecureVector = std::vector<uint8_t, SecureAllocator<uint8_t>>;
+```
+
+A `std::vector<uint8_t>`-compatible type backed by `SecureAllocator`. Used for derived master keys and intermediate cryptographic byte buffers. Its contents are automatically zeroed on destruction.
+
+---
 
 ### `DiaryEntrySummary`
 
-Used for lightweight UI rendering in lists.
+Used for lightweight UI rendering in lists. Only decrypted metadata — never the full entry content.
 
 ```cpp
 struct DiaryEntrySummary {
-    int64_t id;
-    QString title;
-    int64_t createdAt;
-    int64_t updatedAt;
-    int64_t bookmarked;
+    int64_t id;          // Unique database row ID
+    QString title;       // Decrypted entry title
+    int64_t createdAt;   // Unix timestamp (ms)
+    int64_t updatedAt;   // Unix timestamp (ms)
+    int64_t bookmarked;  // 0 = not bookmarked, 1 = bookmarked
 };
 ```
 
@@ -437,7 +536,7 @@ struct DiaryEntrySummary {
 
 ### `EntryMetadata`
 
-Raw database retrieval structure before full decryption.
+Raw database retrieval structure returned before full decryption. The title is still encrypted at this stage.
 
 ```cpp
 struct EntryMetadata {
@@ -445,7 +544,7 @@ struct EntryMetadata {
     int64_t createdAt;
     int64_t updatedAt;
     int64_t bookmarked;
-    QByteArray encryptedTitle;
+    QByteArray encryptedTitle;  // XChaCha20-Poly1305 ciphertext
 };
 ```
 
@@ -453,13 +552,13 @@ struct EntryMetadata {
 
 ### `DiaryEntry`
 
-Represents a fully decrypted, loaded entry in memory.
+Represents a fully decrypted entry loaded into `SecureAllocator`-backed memory. This struct should only exist in memory for as long as it is actively needed.
 
 ```cpp
 struct DiaryEntry {
     int64_t id;
-    std::string title;
-    std::string content;
+    std::string title;    // Plaintext — consider using SecureString for long-lived instances
+    std::string content;  // Plaintext — same caution applies
     int64_t createdAt;
     int64_t updatedAt;
     int64_t bookmarked;

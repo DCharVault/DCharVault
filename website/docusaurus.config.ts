@@ -12,9 +12,7 @@ const config: Config = {
     v4: true, 
   },
 
-  url: 'https://your-docusaurus-site.example.com',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
+  url: 'https://thankful-moss-09a6e6200.7.azurestaticapps.net/',
   baseUrl: '/',
 
   organizationName: 'DCharVault',
@@ -24,10 +22,16 @@ const config: Config = {
 
   markdown: {
     mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
   },
 
   themes: ['@docusaurus/theme-mermaid'],
 
+  plugins: [
+    require.resolve('@easyops-cn/docusaurus-search-local'),
+  ],
 
   i18n: {
     defaultLocale: 'en',
@@ -71,7 +75,7 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'docs',
           position: 'left',
-          label: 'docs',
+          label: 'Docs',
         },
         
         {
@@ -83,7 +87,7 @@ const config: Config = {
     },
     footer: {
       style: 'light',
-      copyright: `Copyright © ${new Date().getFullYear()} DCharVault, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} DCharVault. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,
