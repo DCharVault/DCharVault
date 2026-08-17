@@ -180,7 +180,7 @@ public:
      * @brief Returns a string describing the block type at cursorPos.
      *
      * Returns one of: "normal", "heading1", "heading2", "heading3",
-     *                  "bulletList", "numberedList", "blockquote"
+     *                  "bulletList", "numberedList", "blockquote", "checkbox"
      */
     Q_INVOKABLE QString currentBlockType(int cursorPos);
 
@@ -194,6 +194,39 @@ public:
      */
     Q_INVOKABLE bool isBlockEmpty(int cursorPos);
 
+    /**
+     * @brief Toggle a checkbox marker on the block at cursorPos
+     *        Cycles: normal → Unchecked checkbox → normal
+     *        If the block already has a Checked marker it is removed (turned back to normal)
+     */
+    Q_INVOKABLE void toggleCheckbox(int cursorPos);
+
+    /**
+     * @brief Toggle the checked ↔ unchecked state of a checkbox block at cursorPos
+     *        Only acts if the block already has a checkbox marker
+     *        Returns true if the toggle was performed, false if no checkbox was present
+     */
+    Q_INVOKABLE bool toggleCheckboxAtPoint(int cursorPos);
+
+    /**
+     * @brief Returns true if the block at cursorPos has a checkbox marker
+     *        (either Checked or Unchecked)
+     */
+    Q_INVOKABLE bool isCheckbox(int cursorPos);
+
+    /**
+     * @brief Returns true if the block at cursorPos has a Checked marker
+     */
+    Q_INVOKABLE bool isChecked(int cursorPos);
+
+    // ── Inline HTML insertion ─────────────────────────────────────────────────
+
+    /**
+     * @brief Insert an arbitrary HTML fragment at cursorPos.
+     *        Used for priority label badges and similar inline decorations.
+     *        The HTML is inserted as a rich-text fragment into the document.
+     */
+    Q_INVOKABLE void insertHtml(int cursorPos, const QString &html);
 signals:
     void textDocumentChanged();
     void blockRemoteResourcesChanged();
