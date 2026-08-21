@@ -184,6 +184,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/TextHighlighter.cpp
         viewmodel/RichTextController.cpp
         viewmodel/DiarySearchModel.cpp
+        viewmodel/PriorityViewModel.cpp
 )
 
 # The auto-generated qmltyperegistrations.cpp does #include <TextHighlighter.h>
