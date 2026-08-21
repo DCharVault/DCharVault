@@ -172,6 +172,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/TextHighlighter.h
         viewmodel/RichTextController.h
         viewmodel/DiarySearchModel.h
+         viewmodel/PriorityViewModel.h
 
         viewmodel/LoginViewModel.cpp
         viewmodel/DiaryViewModel.cpp
