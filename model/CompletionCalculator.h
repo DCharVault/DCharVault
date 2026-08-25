@@ -3,11 +3,11 @@
 
 #include<QString>
 
-struct CompletionCalculator {
+struct CompletionResult{
     int completed = 0;
     int total = 0;
 
-    double precentage() const {
+    double percentage() const {
         return (total>0) ? (static_cast<double>(completed)*100/total) : 0.0;
     }
 

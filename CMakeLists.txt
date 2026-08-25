@@ -88,6 +88,7 @@ add_library(DCharVault_Core STATIC
     model/DiaryEntry.cpp
     model/VaultModel.cpp
     model/SessionManager.cpp
+    model/CompletionCalculator.cpp
 )
 target_link_libraries(DCharVault_Core PRIVATE ${SODIUM_LIB} Qt6::Core Qt6::Sql Qt6::Gui)
 target_include_directories(DCharVault_Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
