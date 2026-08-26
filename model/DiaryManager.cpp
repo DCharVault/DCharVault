@@ -8,6 +8,7 @@
 #include<string>
 #include<QString>
 #include"TitleGenerators.h"
+#include "CompletionCalculator.h"
 
 namespace DefaultsDM_Values{
     constexpr uint32_t DEFAULT_SESSION_TIMEOUT_SECONDS = 420; // 7mins default timeout session period
@@ -233,12 +234,31 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
             qCritical() << "Warning: Failed to decrypt title for entry ID:" << meta.id;
             decryptedTitle = "[[ Decryption Failed - Corrupted ]]";
         }
+
+        int completionCompleted = 0;
+        int completionTotal = 0;
+
+        if (!meta.encryptedCompletionCompleted.isEmpty()) {
+            QString decVal = encManager.decryptString(meta.encryptedCompletionCompleted, masterKey);
+            bool ok = false;
+            int val = decVal.toInt(&ok);
+            if (ok) completionCompleted = val;
+        }
+        if (!meta.encryptedCompletionTotal.isEmpty()) {
+            QString decVal = encManager.decryptString(meta.encryptedCompletionTotal, masterKey);
+            bool ok = false;
+            int val = decVal.toInt(&ok);
+            if (ok) completionTotal = val;
+        }
+
         DiaryEntrySummary summary;
         summary.id = meta.id;
         summary.createdAt = meta.createdAt;
         summary.updatedAt = meta.updatedAt;
         summary.bookmarked = meta.bookmarked;
         summary.title = decryptedTitle;
+        summary.completionCompleted = completionCompleted;
+        summary.completionTotal     = completionTotal;
 
         decryptedSummaries.push_back(summary);
     }
@@ -273,7 +293,12 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
     }
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 timeStamp = QDateTime::currentSecsSinceEpoch();
-    int64_t insertedId = dbManager.insertEntry(timeStamp,titleEncrypted,contentEncrypted);
+
+    const CompletionResult completion = CompletionCalculator::calculate(content);
+    const QByteArray encCompCompleted = encManager.encryptString(QString::number(completion.completed), masterKey);
+    const QByteArray encCompTotal = encManager.encryptString(QString::number(completion.total), masterKey);
+
+    int64_t insertedId = dbManager.insertEntry(timeStamp,titleEncrypted,contentEncrypted, encCompCompleted, encCompTotal);
     return insertedId;
 }
 
@@ -355,8 +380,13 @@ QString DiaryManager::readEntryContent(int64_t id){
     QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
     qint64 updatedAt = QDateTime::currentSecsSinceEpoch();
 
+    const CompletionResult completion = CompletionCalculator::calculate(content);
+
+    const QByteArray encCompCompleted = encManager.encryptString(QString::number(completion.completed), masterKey);
+    const QByteArray encCompTotal     = encManager.encryptString(QString::number(completion.total), masterKey);
+
     //todo: insert journal name here instead of hardcoded journal
-    if(!dbManager.updateEntry(id,updatedAt,titleEncrypted,contentEncrypted)){
+    if(!dbManager.updateEntry(id,updatedAt,titleEncrypted,contentEncrypted,encCompCompleted,encCompTotal)){
         return DiaryError::DatabaseError;
     }
     return DiaryError::None;

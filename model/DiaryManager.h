@@ -52,6 +52,8 @@ struct DiaryEntrySummary {
     int64_t createdAt;
     int64_t updatedAt;
     int64_t bookmarked;
+    int completionTotal;
+    int completionCompleted;
 };
 
 class DiaryManager{
