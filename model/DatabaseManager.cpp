@@ -68,13 +68,20 @@ bool DatabaseManager::createTable(){
                                     updated_at INTEGER NOT NULL,
                                     bookmarked INTEGER DEFAULT 0 NOT NULL,
                                     encrypted_title BLOB NOT NULL,
-                                    encrypted_content BLOB NOT NULL
+                                    encrypted_content BLOB NOT NULL,
+                                    completion_completed BLOB NOT NULL,
+                                    completion_total     BLOB NOT NULL
                                   )
                                 )";
     if(!query.exec(createDiaryTable)){
         qCritical()<<"Failed to journal entries table: "<<query.lastError().text()<<"\n";
         return false;
     }
+
+    // migration query for old databases journals to support new format of completion_total and completed
+    QSqlQuery migQuery;
+    migQuery.exec("ALTER TABLE journal ADD COLUMN completion_completed BLOB NOT NULL");
+    migQuery.exec("ALTER TABLE journal ADD COLUMN completion_total     BLOB NOT NULL");
 
     qDebug()<<"Success: Database tables verified!";
     return true;
@@ -177,14 +184,16 @@ QByteArray DatabaseManager::getEntryTitle(int64_t id) const{
     return QByteArray();
 }
 
-qint64 DatabaseManager::insertEntry(const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content){
+qint64 DatabaseManager::insertEntry(const qint64 created_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content, int completionTotal, int completionCompleted){
     QSqlQuery query;
-    query.prepare("INSERT INTO journal(created_at,updated_at,encrypted_title,encrypted_content) "
-                  "VALUES(:created_at,:updated_at,:encrypted_title,:encrypted_content)");
+    query.prepare("INSERT INTO journal(created_at,updated_at,encrypted_title,encrypted_content,completion_completed,completion_total) "
+        "VALUES(:created_at,:updated_at,:encrypted_title,:encrypted_content,:completion_completed,:completion_total)");
     query.bindValue(":created_at",created_at);
     query.bindValue(":updated_at",created_at);
     query.bindValue(":encrypted_title",encrypted_title);
     query.bindValue(":encrypted_content",encrypted_content);
+    query.bindValue(":completion_total",completionTotal);
+    query.bindValue(":completion_completed",completionCompleted);
     if(!query.exec()){
         qCritical()<<"Failed to insert journal entries : "<<query.lastError().text()<<"\n";
         return -1;
@@ -213,18 +222,22 @@ bool DatabaseManager::deleteEntry(const qint64 id){
     return true;
 }
 
-bool DatabaseManager::updateEntry(const qint64 id,const qint64 updated_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content)
+bool DatabaseManager::updateEntry(const qint64 id,const qint64 updated_at, const QByteArray &encrypted_title, const QByteArray &encrypted_content, int completionTotal, int completionCompleted)
 {
     QSqlQuery query;
     query.prepare("UPDATE journal SET "
                   "updated_at = :updated_at,"
                   "encrypted_title = :encrypted_title,"
-                  "encrypted_content = :encrypted_content "
+                  "encrypted_content = :encrypted_content,"
+                  "completion_total = :completion_total,"
+                  "completion_completed = :completion_completed "
                   "WHERE id = :id"
                   );
     query.bindValue(":updated_at",updated_at);
     query.bindValue(":encrypted_title",encrypted_title);
     query.bindValue(":encrypted_content",encrypted_content);
+    query.bindValue(":completion_total",completionTotal);
+    query.bindValue(":completion_completed",completionCompleted);
     query.bindValue(":id",id);
     if(!query.exec()){
         qCritical()<<"Failed to update journal entries : "<<query.lastError().text()<<"\n";
@@ -238,7 +251,7 @@ std::vector<EntryMetadata> DatabaseManager::getAllEntriesMetadata(){
     std::vector<EntryMetadata> eMeta;
     QSqlQuery query;
 
-    query.prepare("SELECT id, created_at, updated_at, bookmarked, encrypted_title "
+    query.prepare("SELECT id, created_at, updated_at, bookmarked, encrypted_title, completion_completed, completion_total "
                   "FROM journal "
                   "ORDER BY created_at DESC");
 
@@ -254,6 +267,8 @@ std::vector<EntryMetadata> DatabaseManager::getAllEntriesMetadata(){
         meta.updatedAt = query.value(2).toLongLong();
         meta.bookmarked = query.value(3).toLongLong();
         meta.encryptedTitle = query.value(4).toByteArray();
+        meta.completionCompleted = query.value(5).toInt();
+        meta.completionTotal = query.value(6).toInt();
         eMeta.push_back(meta);
     }
 
