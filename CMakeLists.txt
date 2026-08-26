@@ -122,6 +122,7 @@ set(APP_QML_FILES
     ui/common/AndroidLogin.qml
     ui/common/micro-elements/DCharSwitch.qml
     ui/common/micro-elements/DCharComboBox.qml
+    ui/common/micro-elements/ProgressRing.qml
     ui/common/richtext-micro-elements/CheckboxToggleButton.qml
     ui/common/tabs-settings/AppearanceTab.qml
     ui/common/tabs-settings/SecurityTab.qml
