@@ -32,6 +32,15 @@ QVariant DiaryListModel::data(const QModelIndex &index, int role) const {
     case CreatedAtRole: return QVariant::fromValue(entry.createdAt);
     case UpdatedAtRole: return QVariant::fromValue(entry.updatedAt);
     case BookmarkedRole: return QVariant::fromValue(entry.bookmarked);
+    case CompletionCompletedRoles: return entry.completionCompleted;
+    case CompletionTotalRoles:     return entry.completionTotal;
+    case CompletionStateRoles: {
+        if (entry.completionTotal == 0)
+            return QStringLiteral("none");
+        if (entry.completionCompleted == entry.completionTotal)
+            return QStringLiteral("complete");
+        return QStringLiteral("inprogress");
+    }
     default: return QVariant();
     }
 }
@@ -43,5 +52,8 @@ QHash<int, QByteArray> DiaryListModel::roleNames() const {
     roles[CreatedAtRole] = "createdAt";
     roles[UpdatedAtRole] = "updatedAt";
     roles[BookmarkedRole] = "bookmarked";
+    roles[CompletionCompletedRoles] = "completionCompleted";
+    roles[CompletionTotalRoles] = "completionTotal";
+    roles[CompletionStateRoles] = "completionState";
     return roles;
 }
