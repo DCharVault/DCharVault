@@ -91,7 +91,7 @@ function HomepageHeader() {
             Get Started →
           </Link>
           <div>
-            <DownloadButton fileName='DCharVault-Windows.zip'/>
+            <DownloadButton owner='DCharVault' repo='DCharVault'/>
           </div>
         </div>
       </div>
