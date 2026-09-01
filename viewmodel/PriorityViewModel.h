@@ -8,25 +8,24 @@
 class PriorityViewModel : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QVariantList labels READ labels NOTIFY labelsChanged)
 
 public:
     explicit PriorityViewModel(DiaryManager &manager, QObject *parent = nullptr);
 
-    QVariantList labels() const;
-
-    Q_INVOKABLE void addLabel(const QString &name, const QString &color);
-    Q_INVOKABLE void removeLabel(int index);
-    Q_INVOKABLE void load();
+    Q_INVOKABLE QVariantList getPriorityLabels();
+    Q_INVOKABLE bool savePriorityLabel(const QString &name, const QString &color);
+    Q_INVOKABLE bool deletePriorityLabel(const QString &name);
+    Q_INVOKABLE QString buildLabelHtml(const QString &name, const QString &color);
 
     signals:
         void labelsChanged();
 
 private:
-    void save();
+    QVariantList loadLabels() const;
+    bool saveLabels(const QVariantList &labels);
+
     DiaryManager &m_manager;
-    QVariantList  m_labels;
-    static constexpr const char* CONFIG_KEY = "priority_labels";
+    static constexpr const char *kConfigKey = "priority_labels";
 };
 
 #endif // PRIORITYVIEWMODEL_H

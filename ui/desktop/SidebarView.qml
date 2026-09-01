@@ -107,7 +107,7 @@ Item {
             }
         }
 
-        // 2. NOTE LIST
+        // NOTE LIST
         Rectangle {
             Layout.fillHeight: true
             Layout.fillWidth: true
@@ -140,17 +140,19 @@ Item {
                     height: 64
                     radius: ThemeManager.radiusDefault
 
-                    color: noteList.currentIndex === index ? ThemeManager.surfaceElevated : (delegateMouseArea.containsMouse ? ThemeManager.bgButtonHover : ThemeManager.bgCard)
+                    readonly property int  cCompleted: model.completionCompleted ?? 0
+                    readonly property int  cTotal:     model.completionTotal     ?? 0
+                    readonly property string cState:   model.completionState     ?? "none"
+                    readonly property bool isSelected: noteList.currentIndex === index
+                    readonly property bool isHovered:  delegateMouseArea.containsMouse
+
+                    color: isSelected ? ThemeManager.surfaceElevated
+                                      : (isHovered ? ThemeManager.bgButtonHover : ThemeManager.bgCard)
                     border.color: ThemeManager.lineBorder
-                    border.width: noteList.currentIndex === index ? 0 : 1
+                    border.width: isSelected ? 0 : 1
 
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
+                    Behavior on color { ColorAnimation { duration: 150 } }
 
-                    // Accent left border for active item
                     Rectangle {
                         anchors.left: parent.left
                         anchors.top: parent.top
@@ -158,15 +160,43 @@ Item {
                         anchors.margins: 1
                         width: 3
                         color: ThemeManager.colorAccent
-                        visible: noteList.currentIndex === index
+                        visible: delegateRoot.isSelected
                         radius: 2
                     }
 
+                    // Progress Ring (right side)
+                    ProgressRing {
+                        id: progressRing
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.rightMargin: 12
+                        completionCompleted: delegateRoot.cCompleted
+                        completionTotal: delegateRoot.cTotal
+                        completionState: delegateRoot.cState
+                    }
+
+                    //"X / Y tasks" tooltip on hover
+                    ToolTip {
+                        id: progressTooltip
+                        visible: delegateRoot.isHovered && delegateRoot.cState !== "none"
+                        delay: 400
+                        text: delegateRoot.cState === "complete"
+                              ? "All %1 tasks complete ✓".arg(delegateRoot.cTotal)
+                              : "%1 / %2 tasks done".arg(delegateRoot.cCompleted).arg(delegateRoot.cTotal)
+                        parent: delegateRoot
+                        x: delegateRoot.width - width - 4
+                        y: delegateRoot.height + 4
+                    }
+
                     ColumnLayout {
-                        anchors.fill: parent
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        // Reserve 32px on the right for the progress ring
+                        anchors.right: progressRing.left
                         anchors.margins: 12
-                        // Push text slightly to the right if the accent border is visible
-                        anchors.leftMargin: 12 + (noteList.currentIndex === index ? 4 : 0)
+                        anchors.leftMargin: 12 + (delegateRoot.isSelected ? 4 : 0)
+                        anchors.rightMargin: 4
                         spacing: 2
 
                         Text {
@@ -178,14 +208,30 @@ Item {
                             elide: Text.ElideRight
                         }
 
-                        Text {
-                            text: Qt.formatDateTime(
-                                      new Date(model.createdAt * 1000),
-                                      "MMM d, yyyy")
-                            font.pixelSize: 13
-                            color: ThemeManager.textMuted
+                        RowLayout {
                             Layout.fillWidth: true
-                            elide: Text.ElideRight
+                            spacing: 6
+
+                            Text {
+                                text: Qt.formatDateTime(
+                                          new Date(model.createdAt * 1000),
+                                          "MMM d, yyyy")
+                                font.pixelSize: 13
+                                color: ThemeManager.textMuted
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                            }
+
+                            // "X / Y" compact counter — shown only when selected
+                            Text {
+                                visible: delegateRoot.isSelected && delegateRoot.cState !== "none"
+                                text: "%1 / %2".arg(delegateRoot.cCompleted).arg(delegateRoot.cTotal)
+                                font.pixelSize: 11
+                                color: delegateRoot.cState === "complete"
+                                       ? ThemeManager.colorAccent
+                                       : ThemeManager.textMuted
+                                Layout.alignment: Qt.AlignRight
+                            }
                         }
                     }
 
@@ -240,7 +286,7 @@ Item {
                     onClicked: root.settingsClicked()
                 }
 
-                // RIGHT SIDE: Responsive New Note Button
+                //Responsive New Note Button
                 Button {
                     id: newNoteBtn
                     Layout.fillWidth: true
@@ -248,11 +294,10 @@ Item {
                     clip: true
 
                     background: Rectangle {
-                        // Clean, state-driven colors pulled directly from ThemeManager
                         color: parent.down ? ThemeManager.bgPrimaryActionPressed : (parent.hovered ? ThemeManager.bgPrimaryActionHover : ThemeManager.bgPrimaryAction)
 
                         border.color: ThemeManager.borderPrimaryAction
-                        border.width: ThemeManager.isDark ? 1 : 0 // Optional: keeps the border strictly for dark mode
+                        border.width: ThemeManager.isDark ? 1 : 0
 
                         radius: ThemeManager.radiusPill
                         scale: parent.pressed ? 0.98 : (parent.hovered ? 1.02 : 1.0)
@@ -263,7 +308,6 @@ Item {
                             }
                         }
 
-                        // Smoothly animate the color changes on hover/press
                         Behavior on color {
                             ColorAnimation {
                                 duration: 150

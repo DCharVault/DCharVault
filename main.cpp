@@ -13,6 +13,7 @@
 #include "viewmodel/DiaryListModel.h"
 #include "viewmodel/SecureNetworkManager.h"
 #include "viewmodel/DiarySearchModel.h"
+#include "viewmodel/PriorityViewModel.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -37,6 +38,7 @@ int main(int argc, char *argv[])
 
     LoginViewModel loginVM(diaryManager);
     DiaryViewModel diaryVM(diaryManager);
+    PriorityViewModel priorityVM(diaryManager);
     SessionViewModel diarySM(&diaryManager);
     DiaryListModel diaryListModel(diaryManager);
 
@@ -61,6 +63,7 @@ int main(int argc, char *argv[])
 
     engine.rootContext()->setContextProperty("loginViewModel", &loginVM);
     engine.rootContext()->setContextProperty("diaryViewModel",&diaryVM);
+    engine.rootContext()->setContextProperty("priorityViewModel", &priorityVM);
     engine.rootContext()->setContextProperty("diarySessionModel",&diarySM);
     engine.rootContext()->setContextProperty("diaryListModel",&diaryListModel);
     engine.rootContext()->setContextProperty("diarySearchModel",&diarySearchModel);
