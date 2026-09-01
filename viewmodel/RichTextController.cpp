@@ -675,6 +675,7 @@ void RichTextController::clearBlockFormatting(int selStart, int selEnd)
         cleanBlock.setIndent(0);
         cleanBlock.setLeftMargin(0);
         cleanBlock.setAlignment(Qt::AlignLeft);
+        cleanBlock.setMarker(QTextBlockFormat::MarkerType::NoMarker);
         blockCursor.setBlockFormat(cleanBlock);
 
         if (block == endBlock)
@@ -770,7 +771,14 @@ QString RichTextController::currentBlockType(int cursorPos)
     QTextBlock block = cursor.block();
     QTextBlockFormat blockFmt = block.blockFormat();
 
-    // Check heading level first
+    // check checkboxes first
+    QTextBlockFormat::MarkerType marker = blockFmt.marker();
+    if (marker == QTextBlockFormat::MarkerType::Checked)
+        return QStringLiteral("checkboxChecked");
+    if (marker == QTextBlockFormat::MarkerType::Unchecked)
+        return QStringLiteral("checkboxUnchecked");
+
+    // Check heading level
     int headingLevel = blockFmt.headingLevel();
     if (headingLevel >= 1 && headingLevel <= 3)
         return QStringLiteral("heading%1").arg(headingLevel);
@@ -829,4 +837,113 @@ bool RichTextController::isBlockEmpty(int cursorPos)
     QTextCursor cursor(doc);
     cursor.setPosition(cursorPos);
     return cursor.block().text().isEmpty();
+}
+
+void RichTextController::toggleCheckbox(int cursorPos){
+    QTextDocument *doc = document();
+    if(!doc) return;
+
+    QTextCursor cursor(doc);
+    cursor.setPosition(cursorPos);
+
+    QTextBlock block = cursor.block();
+    QTextBlockFormat blockFmt = block.blockFormat();
+    QTextBlockFormat::MarkerType current = blockFmt.marker();
+    cursor.beginEditBlock();
+
+    if(current==QTextBlockFormat::MarkerType::NoMarker){
+        blockFmt.setMarker(QTextBlockFormat::MarkerType::Unchecked);
+    }else{
+        blockFmt.setMarker(QTextBlockFormat::MarkerType::NoMarker);
+    }
+
+    cursor.setBlockFormat(blockFmt);
+    cursor.endEditBlock();
+}
+
+bool RichTextController::toggleCheckboxAtPoint(int cursorPos){
+    QTextDocument *doc = document();
+    if(!doc) return false;
+
+    QTextCursor cursor(doc);
+    cursor.setPosition(cursorPos);
+
+    QTextBlock block = cursor.block();
+    QTextBlockFormat blockFmt = block.blockFormat();
+    QTextBlockFormat::MarkerType current = blockFmt.marker();
+
+
+    // Only act if this is already a checkbox block
+    if (current == QTextBlockFormat::MarkerType::NoMarker)
+        return false;
+
+    cursor.beginEditBlock();
+    if (current == QTextBlockFormat::MarkerType::Unchecked) {
+        // Tick it: Unchecked → Checked + apply strikethrough to text
+        blockFmt.setMarker(QTextBlockFormat::MarkerType::Checked);
+        cursor.setBlockFormat(blockFmt);
+
+        // Apply strikethrough to the entire block text
+        cursor.movePosition(QTextCursor::StartOfBlock);
+        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+        if (cursor.hasSelection()) {
+            QTextCharFormat fmt;
+            fmt.setFontStrikeOut(true);
+            fmt.setForeground(QBrush(QColor("#888888")));
+            cursor.mergeCharFormat(fmt);
+        }
+    } else {
+        // Untick: Checked → Unchecked + remove strikethrough
+        blockFmt.setMarker(QTextBlockFormat::MarkerType::Unchecked);
+        cursor.setBlockFormat(blockFmt);
+
+        cursor.movePosition(QTextCursor::StartOfBlock);
+        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+        if (cursor.hasSelection()) {
+            QTextCharFormat fmt;
+            fmt.setFontStrikeOut(false);
+            fmt.setForeground(QBrush()); // inherit default color
+            cursor.mergeCharFormat(fmt);
+        }
+    }
+
+    cursor.endEditBlock();
+    return true;
+}
+
+bool RichTextController::isCheckbox(int cursorPos)
+{
+    QTextDocument *doc = document();
+    if (!doc)
+        return false;
+
+    QTextCursor cursor(doc);
+    cursor.setPosition(cursorPos);
+    QTextBlockFormat blockFmt = cursor.block().blockFormat();
+    return blockFmt.marker() != QTextBlockFormat::MarkerType::NoMarker;
+}
+
+bool RichTextController::isChecked(int cursorPos)
+{
+    QTextDocument *doc = document();
+    if (!doc)
+        return false;
+
+    QTextCursor cursor(doc);
+    cursor.setPosition(cursorPos);
+    QTextBlockFormat blockFmt = cursor.block().blockFormat();
+    return blockFmt.marker() == QTextBlockFormat::MarkerType::Checked;
+}
+
+void RichTextController::insertHtml(int cursorPos, const QString &html)
+{
+    QTextDocument *doc = document();
+    if (!doc || html.isEmpty())
+        return;
+
+    QTextCursor cursor(doc);
+    cursor.setPosition(cursorPos);
+    cursor.beginEditBlock();
+    cursor.insertHtml(html);
+    cursor.endEditBlock();
 }

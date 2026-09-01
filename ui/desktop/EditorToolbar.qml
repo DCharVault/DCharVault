@@ -16,6 +16,7 @@ ToolBar {
     property bool isItalic: false
     property bool isUnderline: false
     property bool isStrikethrough: false
+    property bool isCheckbox: false
 
     signal boldClicked
     signal italicClicked
@@ -33,6 +34,9 @@ ToolBar {
 
     signal strikethroughClicked
     signal clearFormattingClicked
+    signal exportClicked
+    signal checkboxClicked
+    signal priorityLabelInserted(string name, string color)
 
     property string currentBlockType: "normal"
     onCurrentBlockTypeChanged: {
@@ -316,6 +320,252 @@ ToolBar {
                 }
             }
 
+            CheckboxToggleButton {
+                isActive: root.isCheckbox
+                onToggled: root.checkboxClicked()
+            }
+
+            ToolButton {
+                id: priorityBtn
+                text: "🏷"
+                font.pixelSize: 15
+                ToolTip.visible: hovered
+                ToolTip.text: "Insert Priority Label"
+                ToolTip.delay: 600
+                contentItem: Text {
+                    text: parent.text
+                    font: parent.font
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: priorityPopup.open()
+
+                Popup {
+                    id: priorityPopup
+                    y: parent.height + 4
+                    x: -8
+                    width: 260
+                    padding: 12
+                    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                    background: Rectangle {
+                        color: ThemeManager.bgCard
+                        border.color: ThemeManager.lineBorder
+                        border.width: 1
+                        radius: ThemeManager.radiusDefault
+                    }
+
+                    // Reload labels each time the popup opens
+                    property var labels: []
+                    onOpened: labels = priorityViewModel.getPriorityLabels()
+
+                    Connections {
+                        target: priorityViewModel
+                        function onLabelsChanged() {
+                            priorityPopup.labels = priorityViewModel.getPriorityLabels()
+                        }
+                    }
+
+                    Column {
+                        width: parent.width
+                        spacing: 10
+
+                        // Header
+                        Text {
+                            text: "Priority Labels"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: ThemeManager.textMain
+                            width: parent.width
+                        }
+
+                        // Existing labels list
+                        Column {
+                            width: parent.width
+                            spacing: 6
+                            Repeater {
+                                model: priorityPopup.labels
+                                delegate: Row {
+                                    width: parent.width
+                                    spacing: 6
+
+                                    // Colored chip — click to insert
+                                    Rectangle {
+                                        id: chip
+                                        height: 26
+                                        width: parent.width - 32
+                                        radius: 4
+                                        color: modelData.color
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: modelData.name.toUpperCase()
+                                            font.pixelSize: 11
+                                            font.bold: true
+                                            color: {
+                                                let c = Qt.color(modelData.color)
+                                                let lum = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b
+                                                return lum < 0.5 ? "#FFFFFF" : "#1A0F18"
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                root.priorityLabelInserted(modelData.name, modelData.color)
+                                                priorityPopup.close()
+                                            }
+                                        }
+
+                                        Behavior on opacity { NumberAnimation { duration: 120 } }
+                                    }
+
+                                    Rectangle {
+                                        width: 26
+                                        height: 26
+                                        radius: 4
+                                        color: delMA.containsMouse
+                                            ? Qt.rgba(1, 0.2, 0.2, 0.2)
+                                            : "transparent"
+                                        Behavior on color { ColorAnimation { duration: 100 } }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "×"
+                                            font.pixelSize: 14
+                                            color: ThemeManager.textMuted
+                                        }
+
+                                        MouseArea {
+                                            id: delMA
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                priorityViewModel.deletePriorityLabel(modelData.name)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: parent.width
+                            height: 1
+                            color: ThemeManager.lineBorder
+                            visible: priorityPopup.labels.length > 0
+                        }
+
+                        Column {
+                            id: addLabelSection
+                            width: parent.width
+                            spacing: 8
+
+                            Text {
+                                text: "+ New Label"
+                                font.pixelSize: 12
+                                font.bold: true
+                                color: ThemeManager.colorAccent
+                                width: parent.width
+                            }
+
+                            Row {
+                                width: parent.width
+                                spacing: 6
+
+                                TextField {
+                                    id: newLabelName
+                                    width: parent.width - newLabelColor.width - saveBtn.width - 12
+                                    height: 28
+                                    placeholderText: "Label name..."
+                                    color: ThemeManager.textMain
+                                    font.pixelSize: 12
+                                    leftPadding: 8
+                                    background: Rectangle {
+                                        color: ThemeManager.bgInput
+                                        radius: 4
+                                        border.color: parent.activeFocus ? ThemeManager.colorAccent : ThemeManager.lineBorder
+                                        border.width: 1
+                                    }
+                                    onAccepted: {
+                                        if (text.trim() !== "")
+                                            saveBtn.doSave()
+                                    }
+                                }
+
+                                Rectangle {
+                                    id: newLabelColor
+                                    width: 28
+                                    height: 28
+                                    radius: 4
+                                    color: colorCycler.currentColor
+                                    border.color: ThemeManager.lineBorder
+                                    border.width: 1
+
+                                    property var palette: [
+                                        "#E05252", "#E07D52", "#D4B84A",
+                                        "#4CAF6E", "#4A90D9", "#7B52E0",
+                                        "#D45296", "#52BDD4"
+                                    ]
+                                    property int colorIndex: 0
+                                    property string currentColor: palette[colorIndex]
+
+                                    MouseArea {
+                                        id: colorCycler
+                                        anchors.fill: parent
+                                        property string currentColor: newLabelColor.currentColor
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            newLabelColor.colorIndex = (newLabelColor.colorIndex + 1) % newLabelColor.palette.length
+                                        }
+                                    }
+
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
+
+                                Rectangle {
+                                    id: saveBtn
+                                    width: 28
+                                    height: 28
+                                    radius: 4
+                                    color: saveBtnMA.containsMouse
+                                        ? ThemeManager.bgPrimaryActionHover
+                                        : ThemeManager.bgPrimaryAction
+                                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "✓"
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                        color: "#FFFFFF"
+                                    }
+
+                                    function doSave() {
+                                        const labelName = newLabelName.text.trim()
+                                        if (labelName === "") return
+                                        priorityViewModel.savePriorityLabel(labelName, newLabelColor.currentColor)
+                                        newLabelName.text = ""
+                                        newLabelColor.colorIndex = 0
+                                    }
+
+                                    MouseArea {
+                                        id: saveBtnMA
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: saveBtn.doSave()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ToolButton {
 
                 text: "A"
@@ -353,6 +603,18 @@ ToolBar {
                     verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: root.clearFormattingClicked()
+            }
+
+            ToolButton {
+                text: "⤴"
+                font.pixelSize: 16
+                contentItem: Text {
+                    text: parent.text
+                    color: ThemeManager.textMain
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: root.exportClicked()
             }
 
             ToolButton {

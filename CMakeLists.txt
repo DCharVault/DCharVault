@@ -88,7 +88,7 @@ add_library(DCharVault_Core STATIC
     model/DiaryEntry.cpp
     model/VaultModel.cpp
     model/SessionManager.cpp
-
+    model/CompletionCalculator.cpp
 )
 target_link_libraries(DCharVault_Core PRIVATE ${SODIUM_LIB} Qt6::Core Qt6::Sql Qt6::Gui)
 target_include_directories(DCharVault_Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -122,6 +122,8 @@ set(APP_QML_FILES
     ui/common/AndroidLogin.qml
     ui/common/micro-elements/DCharSwitch.qml
     ui/common/micro-elements/DCharComboBox.qml
+    ui/common/micro-elements/ProgressRing.qml
+    ui/common/richtext-micro-elements/CheckboxToggleButton.qml
     ui/common/tabs-settings/AppearanceTab.qml
     ui/common/tabs-settings/SecurityTab.qml
 )
@@ -161,6 +163,7 @@ qt_add_qml_module(appDCharVault
         model/TitleGenerators.h
         model/SecureAllocator.h
         model/SessionManager.h
+        model/CompletionCalculator.h
 
         viewmodel/SecurePasswordInput.h
         viewmodel/DiaryListModel.h
@@ -172,6 +175,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/TextHighlighter.h
         viewmodel/RichTextController.h
         viewmodel/DiarySearchModel.h
+         viewmodel/PriorityViewModel.h
 
         viewmodel/LoginViewModel.cpp
         viewmodel/DiaryViewModel.cpp
@@ -183,6 +187,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/TextHighlighter.cpp
         viewmodel/RichTextController.cpp
         viewmodel/DiarySearchModel.cpp
+        viewmodel/PriorityViewModel.cpp
 )
 
 # The auto-generated qmltyperegistrations.cpp does #include <TextHighlighter.h>

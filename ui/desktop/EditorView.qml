@@ -8,7 +8,6 @@ import DCharVault
 Page {
     id: root
 
-    // explicitly set the background
     background: Rectangle {
         color: ThemeManager.bgVault
     }
@@ -281,6 +280,7 @@ Page {
         textDocument: editorArea.textDocument
     }
 
+
     ColorDialog {
         id: colorPickerDialog
         title: root.colorMode === 0 ? "Select Text Color" : "Select Highlighter Color"
@@ -348,7 +348,7 @@ Page {
         isItalic: italicAction.checked
         isUnderline: underlineAction.checked
         isStrikethrough: strikethroughAction.checked
-
+        isCheckbox: richTextController.isCheckbox(editorArea.cursorPosition)
 
         onBoldClicked: boldAction.trigger()
         onItalicClicked: italicAction.trigger()
@@ -359,6 +359,19 @@ Page {
         onBlockquoteClicked: blockquoteAction.trigger()
         onStrikethroughClicked: strikethroughAction.trigger()
         onClearFormattingClicked: clearFormattingAction.trigger()
+
+        onCheckboxClicked: {
+            richTextController.toggleCheckbox(editorArea.cursorPosition)
+            editorArea.forceActiveFocus()
+        }
+
+        onPriorityLabelInserted: function(name, color) {
+            richTextController.insertHtml(
+                editorArea.cursorPosition,
+                priorityViewModel.buildLabelHtml(name, color)
+            )
+            editorArea.forceActiveFocus()
+        }
 
         onBlockTypeSelected: function (blockType) {
             // Clear existing block format if switching to something specific or normal
@@ -395,6 +408,7 @@ Page {
             colorPickerDialog.open()
         }
         onDeleteEntryClicked: deleteAction.trigger()
+        onExportClicked:      exportAction.trigger()
         onDoneClicked: Qt.inputMethod.hide()
         visible: true
     }
@@ -456,6 +470,8 @@ Page {
             TextArea.flickable: TextArea {
                 id: editorArea
                 topPadding: 8
+                // Left padding for checkbox marker zone (Qt renders markers here)
+                leftPadding: 28
                 textFormat: TextEdit.RichText
 
                 font.pointSize: 12
@@ -488,8 +504,37 @@ Page {
                     italicAction.checked = format.italic === true
                     underlineAction.checked = format.underline === true
                     strikethroughAction.checked = format.strikethrough === true
+
+                    // Sync checkbox state to toolbar
+                    toolbar.isCheckbox = richTextController.isCheckbox(editorArea.cursorPosition)
                 }
             }
+
+            // Captures mouse presses in the left 28px zone where Qt renders
+            // checkbox markers. Toggles checked ↔ unchecked without stealing
+            // focus or interfering with normal text selection elsewhere.
+            MouseArea {
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                width: 28
+                acceptedButtons: Qt.LeftButton
+                propagateComposedEvents: true
+
+                onPressed: function(mouse) {
+                    // Map the click to a document cursor position
+                    let clickedPos = editorArea.positionAt(mouse.x, mouse.y)
+                    let toggled = richTextController.toggleCheckboxAtPoint(clickedPos)
+                    if (toggled) {
+                        root.isDirtyState = true
+                        toolbar.isCheckbox = richTextController.isCheckbox(editorArea.cursorPosition)
+                        mouse.accepted = true
+                    } else {
+                        mouse.accepted = false
+                    }
+                }
+            }
+
         }
     }
 }
