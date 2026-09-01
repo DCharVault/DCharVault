@@ -87,7 +87,8 @@ public:
     [[nodiscard]] DiaryError saveClipboardTimeout(uint32_t seconds);
     uint32_t loadClipboardTimeout() const;
 
-
+    [[nodiscard]] DiaryError saveConfig(const QString& key, const QString& value);
+    QString loadConfig(const QString& key, const QString& defaultValue = QString()) const;
 private:
     QString journal_name;
     QString m_contentUri;     // Android: original content:// URI for sync-back

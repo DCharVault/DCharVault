@@ -146,6 +146,27 @@ uint32_t DiaryManager::loadClipboardTimeout() const
     return seconds;
 }
 
+DiaryError DiaryManager::saveConfig(const QString &key, const QString &value) {
+    if (!isVaultOpened()) return DiaryError::MasterKeyNotFound;
+
+    const QByteArray encrypted = encManager.encryptString(value,masterKey);
+    if (encrypted.isEmpty()) return DiaryError::EncryptionFailed;
+    if (!dbManager.setConfigValue(key,encrypted)) return DiaryError::DatabaseError;
+
+    return DiaryError::None;
+}
+
+QString DiaryManager::loadConfig(const QString &key, const QString &defaultValue) const {
+    if (!isVaultOpened()) return defaultValue;
+
+    const QByteArray encrypted = dbManager.getConfigValue(key);
+    if (encrypted.isEmpty()) return defaultValue;
+
+    const QString value = encManager.decryptString(encrypted,masterKey);
+
+    return value.isEmpty() ? defaultValue : value;
+}
+
 [[nodiscard]] DiaryError DiaryManager::openDiary(const QString& journalName, const QString& path, const SecureString& password) {
     if(!dbManager.databaseInit(path)){
         return DiaryError::DatabaseOpenError;
