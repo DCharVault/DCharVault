@@ -227,6 +227,18 @@ public:
      *        The HTML is inserted as a rich-text fragment into the document.
      */
     Q_INVOKABLE void insertHtml(int cursorPos, const QString &html);
+
+    /**
+     * @brief Returns a list of all checkbox blocks in the document.
+     *
+     * Each entry is a QVariantMap with:
+     *   "position" (int)  — block.position() for positionToRectangle()
+     *   "checked"  (bool) — true if MarkerType::Checked
+     *
+     * Used by the QML overlay since QQuickTextEdit doesn't render
+     * QTextBlockFormat::MarkerType visually.
+     */
+    Q_INVOKABLE QVariantList checkboxBlockInfo() const;
 signals:
     void textDocumentChanged();
     void blockRemoteResourcesChanged();

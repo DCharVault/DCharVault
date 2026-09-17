@@ -170,6 +170,7 @@ Item {
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.rightMargin: 12
+                        visible: delegateRoot.cState !== "none"
                         completionCompleted: delegateRoot.cCompleted
                         completionTotal: delegateRoot.cTotal
                         completionState: delegateRoot.cState
@@ -193,7 +194,7 @@ Item {
                         anchors.bottom: parent.bottom
                         anchors.left: parent.left
                         // Reserve 32px on the right for the progress ring
-                        anchors.right: progressRing.left
+                        anchors.right: progressRing.visible ? progressRing.left : parent.right
                         anchors.margins: 12
                         anchors.leftMargin: 12 + (delegateRoot.isSelected ? 4 : 0)
                         anchors.rightMargin: 4

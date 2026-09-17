@@ -25,6 +25,11 @@ Page {
     property int colorMode: 0 // 0 == text color, 1 == highlight color
     property int currentEntryId: -1
     property string originalTitle: ""
+    property var checkboxOverlayModel: []
+
+    function refreshCheckboxOverlay() {
+        checkboxOverlayModel = richTextController.checkboxBlockInfo()
+    }
 
     // --- API ---
     property alias entryTitle: titleField.text
@@ -46,6 +51,7 @@ Page {
         root.entryContent = diaryViewModel.loadEntryContent(entryId)
         editorArea.textDocument.modified = false
         root.isDirtyState = false
+        root.refreshCheckboxOverlay()
     }
 
     Connections {
@@ -362,6 +368,8 @@ Page {
 
         onCheckboxClicked: {
             richTextController.toggleCheckbox(editorArea.cursorPosition)
+            toolbar.isCheckbox = richTextController.isCheckbox(editorArea.cursorPosition)
+            root.refreshCheckboxOverlay()
             editorArea.forceActiveFocus()
         }
 
@@ -528,10 +536,35 @@ Page {
                     if (toggled) {
                         root.isDirtyState = true
                         toolbar.isCheckbox = richTextController.isCheckbox(editorArea.cursorPosition)
+                        root.refreshCheckboxOverlay()
                         mouse.accepted = true
                     } else {
                         mouse.accepted = false
                     }
+                }
+            }
+
+            // ── Checkbox visual overlay ──────────────────────────────────
+            // QML TextArea (Basic style) does NOT render QTextBlockFormat
+            // checkbox markers. We draw them ourselves as Text items
+            // positioned at each checkbox block's y-coordinate.
+            Repeater {
+                model: root.checkboxOverlayModel
+                delegate: Text {
+                    required property var modelData
+                    property rect blockRect: editorArea.positionToRectangle(modelData.position)
+                    x: 6
+                    y: blockRect.y
+                    width: 20
+                    height: blockRect.height
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
+                    text: modelData.checked ? "☑" : "☐"
+                    font.pixelSize: 15
+                    color: modelData.checked ? ThemeManager.colorAccent : ThemeManager.textMuted
+
+                    // Click to toggle: handled by the MouseArea above,
+                    // this item is purely visual (no mouse interaction).
                 }
             }
 

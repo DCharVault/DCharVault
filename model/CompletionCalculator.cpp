@@ -4,7 +4,7 @@
 #include<QTextBlock>
 #include<QTextBlockFormat>
 
-#ifndef QT_DEBUG
+#ifdef QT_DEBUG
 #include<QDebug>
 #endif
 

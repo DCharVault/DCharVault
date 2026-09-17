@@ -947,3 +947,23 @@ void RichTextController::insertHtml(int cursorPos, const QString &html)
     cursor.insertHtml(html);
     cursor.endEditBlock();
 }
+
+QVariantList RichTextController::checkboxBlockInfo() const
+{
+    QVariantList result;
+    QTextDocument *doc = document();
+    if (!doc)
+        return result;
+
+    for (QTextBlock block = doc->begin(); block != doc->end(); block = block.next()) {
+        const QTextBlockFormat::MarkerType marker = block.blockFormat().marker();
+        if (marker == QTextBlockFormat::MarkerType::Checked ||
+            marker == QTextBlockFormat::MarkerType::Unchecked) {
+            QVariantMap info;
+            info[QStringLiteral("position")] = block.position();
+            info[QStringLiteral("checked")]  = (marker == QTextBlockFormat::MarkerType::Checked);
+            result.append(info);
+        }
+    }
+    return result;
+}
