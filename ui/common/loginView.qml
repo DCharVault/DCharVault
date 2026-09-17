@@ -10,9 +10,9 @@ Item{
     height: 600
     visible: true
     title: "Vault Login"
-    property string selectedDBfile = ""
+    property string selectedDBfile: ""
     ColumnLayout{
-        anchors.centerIn = parent
+        anchors.centerIn: parent
         spacing: 10
         Text{
             text: diaryName === "" ? "Pick Your Journal" : "Change Vault";

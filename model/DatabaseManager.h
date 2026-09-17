@@ -11,6 +11,8 @@ struct EntryMetadata{
     int64_t updatedAt;
     int64_t bookmarked;
     QByteArray encryptedTitle;
+    QByteArray encryptedCompletionTotal;
+    QByteArray encryptedCompletionCompleted;
 };
 
 class DatabaseManager{
@@ -23,9 +25,9 @@ public:
     bool setConfigValue(const QString& key, const QByteArray& value);
 
 
-    qint64 insertEntry(const qint64 created_at, const QByteArray& encrypted_title, const QByteArray& encrypted_content);
+    qint64 insertEntry(const qint64 created_at, const QByteArray& encrypted_title, const QByteArray& encrypted_content, const QByteArray& encryptedCompletionCompleted, const QByteArray& encryptedCompletionTotal);
     bool deleteEntry(const qint64 id);
-    bool updateEntry(const qint64 id, const qint64 updated_at, const QByteArray& encrypted_title, const QByteArray& encrypted_content);
+    bool updateEntry(const qint64 id, const qint64 updated_at, const QByteArray& encrypted_title, const QByteArray& encrypted_content, const QByteArray& encryptedCompletionCompleted, const QByteArray& encryptedCompletionTotal);
 
 
     bool setJournalName(const QString& newJournal_name);

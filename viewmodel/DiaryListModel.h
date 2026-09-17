@@ -15,7 +15,10 @@ public:
         TitleRole,
         CreatedAtRole,
         UpdatedAtRole,
-        BookmarkedRole
+        BookmarkedRole,
+        CompletionCompletedRoles,
+        CompletionTotalRoles,
+        CompletionStateRoles
     };
 
     explicit DiaryListModel(DiaryManager& manager, QObject *parent = nullptr);
