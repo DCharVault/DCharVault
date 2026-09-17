@@ -5,7 +5,7 @@ import DCharVault
 ToolButton{
     id: root
     property bool isActive: false
-    signal toggled()
+    signal actionToggled()
 
     text: "☑"
     font.pixelSize: 16
@@ -37,7 +37,7 @@ ToolButton{
         }
     }
     onClicked: {
-        root.toggled()
+        root.actionToggled()
         // Re-bind checked so it always reflects the real document state
         // rather than the toggle animation state
         checked = Qt.binding(function() { return root.isActive })

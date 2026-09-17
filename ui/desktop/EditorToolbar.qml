@@ -322,7 +322,7 @@ ToolBar {
 
             CheckboxToggleButton {
                 isActive: root.isCheckbox
-                onToggled: root.checkboxClicked()
+                onActionToggled: root.checkboxClicked()
             }
 
             ToolButton {

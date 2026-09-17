@@ -13,17 +13,11 @@ CompletionResult CompletionCalculator::calculate(const QString &richTextHtml)
     CompletionResult result;
     if (richTextHtml.isEmpty()) return result;
 
-    QTextDocument doc;
-    doc.setHtml(richTextHtml);
-    for (QTextBlock block = doc.begin(); block != doc.end(); block = block.next()) {
-        const QTextBlockFormat::MarkerType marker = block.blockFormat().marker();
-        if (marker == QTextBlockFormat::MarkerType::Unchecked) {
-            ++result.total;
-        } else if (marker == QTextBlockFormat::MarkerType::Checked) {
-            ++result.total;
-            ++result.completed;
-        }
-    }
+    // Fast parsing: count the injected zero-width tags directly
+    result.completed = richTextHtml.count(QStringLiteral("\x200B" "CB:1" "\x200B"));
+    int unchecked    = richTextHtml.count(QStringLiteral("\x200B" "CB:0" "\x200B"));
+    result.total     = result.completed + unchecked;
+
 #ifdef QT_DEBUG
     qDebug() << "[CompletionCalculator] Result:"
              << result.completed << "/" << result.total

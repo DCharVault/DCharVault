@@ -229,6 +229,16 @@ public:
     Q_INVOKABLE void insertHtml(int cursorPos, const QString &html);
 
     /**
+     * @brief Serialize document to HTML while preserving checkbox markers
+     */
+    Q_INVOKABLE QString getDocumentHtml() const;
+
+    /**
+     * @brief Load HTML and restore checkbox markers
+     */
+    Q_INVOKABLE void setDocumentHtml(const QString &html);
+
+    /**
      * @brief Returns a list of all checkbox blocks in the document.
      *
      * Each entry is a QVariantMap with:

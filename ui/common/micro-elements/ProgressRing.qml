@@ -60,7 +60,7 @@ Canvas{
 
     Connections {
         target: ThemeManager
-        function onThemeChanged() { root.requestPaint() }
+        function onIsDarkChanged() { root.requestPaint() }
     }
 
     Component.onCompleted: requestPaint()

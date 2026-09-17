@@ -125,20 +125,11 @@ QString PriorityViewModel::buildLabelHtml(const QString &name, const QString &co
     if (name.isEmpty())
         return {};
 
-    // Pick readable text color based on background luminance
-    QColor bg(color);
-    const double luminance = 0.299 * bg.redF() + 0.587 * bg.greenF() + 0.114 * bg.blueF();
-    const QString textColor = (luminance < 0.5) ? QStringLiteral("#FFFFFF") : QStringLiteral("#1A0F18");
-
+    // Generate a circular dot emoji wrapped in an anchor link.
+    // encode the color and name into the href so that QML can
+    // intercept hover events on this link and display a ToolTip.
+    // The link uses text-decoration:none to hide the underline.
     return QStringLiteral(
-        " <span style=\""
-        "background-color:%1;"
-        "color:%2;"
-        "border-radius:3px;"
-        "padding:1px 6px 2px 6px;"
-        "font-size:10pt;"
-        "font-weight:bold;"
-        "font-family:'Open Sans',sans-serif;"
-        "\">%3</span> "
-    ).arg(color, textColor, name.toUpper());
+        " <a href=\"priority:%1:%2\" style=\"text-decoration:none; color:%1; font-size:16pt;\">●</a> "
+    ).arg(color, name.toUpper());
 }

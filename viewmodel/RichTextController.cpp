@@ -948,6 +948,62 @@ void RichTextController::insertHtml(int cursorPos, const QString &html)
     cursor.endEditBlock();
 }
 
+QString RichTextController::getDocumentHtml() const
+{
+    QTextDocument *doc = document();
+    if (!doc) return {};
+
+    QTextDocument *clone = doc->clone();
+    
+    // Inject zero-width markers to preserve checkbox state since toHtml() drops it
+    for (QTextBlock block = clone->begin(); block != clone->end(); block = block.next()) {
+        const QTextBlockFormat::MarkerType marker = block.blockFormat().marker();
+        if (marker == QTextBlockFormat::MarkerType::Checked) {
+            QTextCursor cursor(block);
+            cursor.insertText(QStringLiteral("\x200B" "CB:1" "\x200B"));
+        } else if (marker == QTextBlockFormat::MarkerType::Unchecked) {
+            QTextCursor cursor(block);
+            cursor.insertText(QStringLiteral("\x200B" "CB:0" "\x200B"));
+        }
+    }
+    QString html = clone->toHtml();
+    delete clone;
+    return html;
+}
+
+void RichTextController::setDocumentHtml(const QString &html)
+{
+    QTextDocument *doc = document();
+    if (!doc) return;
+
+    doc->setHtml(html);
+    
+    QTextCursor cursor(doc);
+    cursor.beginEditBlock();
+
+    // Use find() to safely locate and replace the hidden markers, 
+    // avoiding the iterator invalidation infinite loop that happens with QTextBlock.
+    QTextCursor match = doc->find(QStringLiteral("\x200B" "CB:1" "\x200B"));
+    while (!match.isNull()) {
+        QTextBlockFormat fmt = match.blockFormat();
+        fmt.setMarker(QTextBlockFormat::MarkerType::Checked);
+        match.setBlockFormat(fmt);
+        match.removeSelectedText();
+        match = doc->find(QStringLiteral("\x200B" "CB:1" "\x200B"), match);
+    }
+
+    match = doc->find(QStringLiteral("\x200B" "CB:0" "\x200B"));
+    while (!match.isNull()) {
+        QTextBlockFormat fmt = match.blockFormat();
+        fmt.setMarker(QTextBlockFormat::MarkerType::Unchecked);
+        match.setBlockFormat(fmt);
+        match.removeSelectedText();
+        match = doc->find(QStringLiteral("\x200B" "CB:0" "\x200B"), match);
+    }
+
+    cursor.endEditBlock();
+}
+
 QVariantList RichTextController::checkboxBlockInfo() const
 {
     QVariantList result;

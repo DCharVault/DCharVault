@@ -33,7 +33,11 @@ Page {
 
     // --- API ---
     property alias entryTitle: titleField.text
-    property alias entryContent: editorArea.text
+    property string entryContent: ""
+    onEntryContentChanged: {
+        richTextController.setDocumentHtml(entryContent)
+        root.refreshCheckboxOverlay()
+    }
     property alias readOnly: editorArea.readOnly
 
     function tryNavigateTo(entryId, entryTitle) {
@@ -73,12 +77,12 @@ Page {
         function onEntrySaveFailed(errorMessage) {
             console.error("QML Error: " + errorMessage)
         }
-        function onEntryDeletedSuccessfully() {
-            console.log("QML: Entry deleted. Clearing editor.")
+        function onEntryDeletedSuccessfully(deletedId) {
+            console.log("QML: Entry deleted! Clearing editor.")
             diaryListModel.loadEntries()
             root.currentEntryId = -1
             titleField.text = ""
-            editorArea.text = ""
+            richTextController.setDocumentHtml("")
             editorArea.textDocument.modified = false
             root.isDirtyState = false
         }
@@ -95,7 +99,7 @@ Page {
             console.log("CRITICAL DEBUG -> Hitting Save! currentEntryId is:",
                         root.currentEntryId)
             diaryViewModel.saveNewEntry(root.currentEntryId, titleField.text,
-                                        editorArea.text)
+                                        richTextController.getDocumentHtml())
             originalTitle = titleField.text
             editorArea.textDocument.modified = false
             root.isDirtyState = false
@@ -489,7 +493,31 @@ Page {
                 persistentSelection: true
                 color: ThemeManager.textMain
 
-                onTextChanged: root.isDirtyState = true
+                hoverEnabled: true
+
+                ToolTip {
+                    id: priorityToolTip
+                    visible: false
+                    text: ""
+                    delay: 200
+                }
+
+                onLinkHovered: function(link) {
+                    if (link.startsWith("priority:")) {
+                        let parts = link.substring(9).split(":");
+                        // parts[0] is color, parts[1] is name
+                        priorityToolTip.text = parts[1];
+                        priorityToolTip.visible = true;
+                    } else {
+                        priorityToolTip.visible = false;
+                    }
+                }
+
+                onTextChanged: {
+                    root.isDirtyState = true
+                    // Refresh checkbox overlay in case the user pressed Enter or deleted a block
+                    root.refreshCheckboxOverlay()
+                }
                 onCursorPositionChanged: {
                     if (editorArea.inputMethodComposing)
                         return
