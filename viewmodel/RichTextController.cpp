@@ -960,10 +960,10 @@ QString RichTextController::getDocumentHtml() const
         const QTextBlockFormat::MarkerType marker = block.blockFormat().marker();
         if (marker == QTextBlockFormat::MarkerType::Checked) {
             QTextCursor cursor(block);
-            cursor.insertText(QStringLiteral("\x200B" "CB:1" "\x200B"));
+            cursor.insertText(QStringLiteral("\u200BCB:1\u200B"));
         } else if (marker == QTextBlockFormat::MarkerType::Unchecked) {
             QTextCursor cursor(block);
-            cursor.insertText(QStringLiteral("\x200B" "CB:0" "\x200B"));
+            cursor.insertText(QStringLiteral("\u200BCB:0\u200B"));
         }
     }
     QString html = clone->toHtml();
@@ -983,22 +983,22 @@ void RichTextController::setDocumentHtml(const QString &html)
 
     // Use find() to safely locate and replace the hidden markers, 
     // avoiding the iterator invalidation infinite loop that happens with QTextBlock.
-    QTextCursor match = doc->find(QStringLiteral("\x200B" "CB:1" "\x200B"));
+    QTextCursor match = doc->find(QStringLiteral("\u200BCB:1\u200B"));
     while (!match.isNull()) {
         QTextBlockFormat fmt = match.blockFormat();
         fmt.setMarker(QTextBlockFormat::MarkerType::Checked);
         match.setBlockFormat(fmt);
         match.removeSelectedText();
-        match = doc->find(QStringLiteral("\x200B" "CB:1" "\x200B"), match);
+        match = doc->find(QStringLiteral("\u200BCB:1\u200B"), match);
     }
 
-    match = doc->find(QStringLiteral("\x200B" "CB:0" "\x200B"));
+    match = doc->find(QStringLiteral("\u200BCB:0\u200B"));
     while (!match.isNull()) {
         QTextBlockFormat fmt = match.blockFormat();
         fmt.setMarker(QTextBlockFormat::MarkerType::Unchecked);
         match.setBlockFormat(fmt);
         match.removeSelectedText();
-        match = doc->find(QStringLiteral("\x200B" "CB:0" "\x200B"), match);
+        match = doc->find(QStringLiteral("\u200BCB:0\u200B"), match);
     }
 
     cursor.endEditBlock();

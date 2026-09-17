@@ -14,8 +14,8 @@ CompletionResult CompletionCalculator::calculate(const QString &richTextHtml)
     if (richTextHtml.isEmpty()) return result;
 
     // Fast parsing: count the injected zero-width tags directly
-    result.completed = richTextHtml.count(QStringLiteral("\x200B" "CB:1" "\x200B"));
-    int unchecked    = richTextHtml.count(QStringLiteral("\x200B" "CB:0" "\x200B"));
+    result.completed = richTextHtml.count(QStringLiteral("\u200BCB:1\u200B"));
+    int unchecked    = richTextHtml.count(QStringLiteral("\u200BCB:0\u200B"));
     result.total     = result.completed + unchecked;
 
 #ifdef QT_DEBUG
