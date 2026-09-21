@@ -1,113 +1,83 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface DownloadButtonProps {
   owner: string;
   repo: string;
 }
 
-type OS = 'Windows' | 'Linux' | 'Android' | 'Unknown';
+type OS = 'Windows' | 'macOS' | 'Linux' | 'Android' | 'Desktop';
 
 export default function DownloadButton({ owner, repo }: DownloadButtonProps) {
-  const [os, setOs] = useState<OS>('Unknown');
-  const [mainDownloadUrl, setMainDownloadUrl] = useState(`https://github.com/${owner}/${repo}/releases`);
+  const [os, setOs] = useState<OS>('Desktop');
   const [version, setVersion] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [assets, setAssets] = useState<any[]>([]);
+  const [primaryAssetUrl, setPrimaryAssetUrl] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
-  
-  const [releaseAssets, setReleaseAssets] = useState<any[]>([]);
 
   useEffect(() => {
-    const userAgent = window.navigator.userAgent;
-    let detectOS: OS = 'Unknown';
+    if (typeof window !== 'undefined') {
+      const ua = window.navigator.userAgent;
+      if (ua.includes('Win')) setOs('Windows');
+      else if (ua.includes('Mac')) setOs('macOS');
+      else if (ua.includes('Linux')) setOs('Linux');
+      else if (ua.includes('Android')) setOs('Android');
+    }
+  }, []);
 
-    if (userAgent.indexOf('Win') !== -1) detectOS = 'Windows';
-    else if (userAgent.indexOf('Linux') !== -1) detectOS = 'Linux';
-    else if (userAgent.indexOf('Android') !== -1) detectOS = 'Android';
-
-    setOs(detectOS);
-
-    fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`)
+  useEffect(() => {
+    fetch(`https://api.github.com/repos/${owner}/${repo}/releases?per_page=1`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.tag_name) setVersion(data.tag_name);
+        if (!data || data.length === 0) return;
         
-        const assets = data.assets || [];
-        setReleaseAssets(assets);
+        const release = data[0]; 
+        setVersion(release.tag_name || release.name || '');
+        
+        const releaseAssets = release.assets || [];
+        setAssets(releaseAssets);
 
-        let targetAsset;
-        if (detectOS === 'Windows') {
-          targetAsset = assets.find((a: any) => a.name.endsWith('.exe'));
-        } else if (detectOS === 'Linux') {
-          targetAsset = assets.find((a: any) => a.name.endsWith('.zip'));
+        const searchOs = os === 'Desktop' ? 'Windows' : os; 
+        let target = releaseAssets.find((a: any) => 
+          a.name.toLowerCase().includes(searchOs.toLowerCase()) && a.name.endsWith('.zip')
+        );
+        
+        if (!target) target = releaseAssets.find((a: any) => a.name.endsWith('.zip'));
+        if (!target && releaseAssets.length > 0) target = releaseAssets[0];
+        
+        if (target) {
+          setPrimaryAssetUrl(target.browser_download_url);
         }
-
-        if (targetAsset) {
-          setMainDownloadUrl(targetAsset.browser_download_url);
-        }
-        setLoading(false);
       })
-      .catch((err) => {
-        console.error('Failed to fetch download releases', err);
-        setLoading(false);
-      });
-  }, [owner, repo]);
+      .catch(console.error);
+  }, [owner, repo, os]);
 
-  const buttonText = loading
-    ? 'Checking latest version...'
-    : version
-    ? `Download ${version} for ${os !== 'Unknown' ? os : 'Desktop'}`
-    : 'Download latest version';
+  const btnText = version ? `Download ${version} for ${os}` : `Checking latest...`;
 
   return (
-    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'stretch' }}>
-      {/* Main Download Action */}
+    <div className="button-group" style={{ position: 'relative', display: 'inline-flex' }}>
+      {/* Main Download Button */}
       <a
-        href={mainDownloadUrl}
-        className="button button--secondary button--lg"
-        style={{
-          borderTopRightRadius: 0,
-          borderBottomRightRadius: 0,
-          borderRight: 'none', // Prevents double-thick borders in the middle
-          display: 'flex',
-          alignItems: 'center',
+        className="button button--primary button--lg"
+        href={primaryAssetUrl || '#'}
+        onClick={(e) => {
+          if (!primaryAssetUrl) e.preventDefault();
+        }}
+        style={{ 
+          pointerEvents: primaryAssetUrl ? 'auto' : 'none', 
+          opacity: primaryAssetUrl ? 1 : 0.7 
         }}
       >
-        {buttonText}
+        {btnText}
       </a>
 
-      {/* Dropdown Toggle Button */}
+      {/* Dropdown Toggle */}
       <button
-        className="button button--secondary button--lg"
-        style={{
-          borderTopLeftRadius: 0,
-          borderBottomLeftRadius: 0,
-          padding: '0 12px',
-          borderLeft: '1px solid rgba(0, 0, 0, 0.1)', // A softer, more professional divider
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-        }}
+        className="button button--primary button--lg"
         onClick={() => setIsOpen(!isOpen)}
+        style={{ padding: '0 12px' }}
         aria-label="More download options"
       >
-        {/* Using an SVG ensures perfect vertical centering unlike a text arrow */}
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{
-            transform: isOpen ? 'rotate(180deg)' : 'none',
-            transition: 'transform 0.2s ease',
-          }}
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        ▼
       </button>
 
       {/* Dropdown Menu */}
@@ -117,43 +87,48 @@ export default function DownloadButton({ owner, repo }: DownloadButtonProps) {
             position: 'absolute',
             top: '100%',
             right: 0,
-            marginTop: '8px',
-            backgroundColor: 'var(--ifm-background-surface-color, #fff)',
-            border: '1px solid var(--ifm-color-emphasis-300, #ccc)',
-            borderRadius: 'var(--ifm-global-radius, 4px)', // Matches Docusaurus theme radius
+            marginTop: '6px',
+            backgroundColor: 'var(--ifm-background-surface-color, #ffffff)',
+            border: '1px solid var(--ifm-color-emphasis-300, #cccccc)',
+            borderRadius: 'var(--ifm-global-radius, 6px)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            minWidth: '220px',
+            minWidth: '240px',
             zIndex: 100,
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden', // Keeps hover effects inside the rounded corners
+            overflow: 'hidden',
           }}
         >
-          {releaseAssets.map((asset) => (
+          {assets.length === 0 && (
+            <span style={{ padding: '12px', color: 'var(--ifm-font-color-base, #333)', fontSize: '14px', textAlign: 'center' }}>
+              No files available
+            </span>
+          )}
+          {assets.map((asset) => (
             <a
               key={asset.id}
               href={asset.browser_download_url}
               style={{
-                padding: '10px 16px',
+                padding: '12px 16px',
                 textDecoration: 'none',
-                color: 'inherit',
-                borderBottom: '1px solid var(--ifm-color-emphasis-200, #eee)',
+                color: 'var(--ifm-font-color-base, #333333)',
+                borderBottom: '1px solid var(--ifm-color-emphasis-200, #eeeeee)',
                 fontSize: '14px',
+                transition: 'background-color 0.2s'
               }}
-              // Quick inline hover effect simulation
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ifm-color-emphasis-100, #f5f5f5)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
-              Download {asset.name}
+              {asset.name}
             </a>
           ))}
           <a
             href={`https://github.com/${owner}/${repo}/releases/`}
             style={{
-              padding: '10px 16px',
+              padding: '12px 16px',
               textDecoration: 'none',
               fontWeight: 'bold',
-              color: 'var(--ifm-color-primary)',
+              color: 'var(--ifm-color-primary, #000)',
               fontSize: '14px',
               textAlign: 'center',
             }}
