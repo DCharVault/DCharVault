@@ -25,11 +25,15 @@ export default function DownloadButton({ owner, repo }: DownloadButtonProps) {
   }, []);
 
   useEffect(() => {
-    fetch(`https://api.github.com/repos/${owner}/${repo}/releases?per_page=1`)
+    let ignore = false
+    const controller = new AbortController();
+    fetch(`https://api.github.com/repos/${owner}/${repo}/releases?per_page=1`,{
+      signal: controller.signal
+    })
       .then((res) => res.json())
       .then((data) => {
+        if(ignore) return;
         if (!data || data.length === 0) return;
-        
         const release = data[0]; 
         setVersion(release.tag_name || release.name || '');
         
@@ -48,7 +52,15 @@ export default function DownloadButton({ owner, repo }: DownloadButtonProps) {
           setPrimaryAssetUrl(target.browser_download_url);
         }
       })
-      .catch(console.error);
+      .catch((error)=>{
+        if(error.name==='AbortError') return;
+        console.log(error)
+      });
+      
+      return ()=>{
+        ignore = true;
+        controller.abort();
+      };
   }, [owner, repo, os]);
 
   const btnText = version ? `Download ${version} for ${os}` : `Checking latest...`;
@@ -76,6 +88,8 @@ export default function DownloadButton({ owner, repo }: DownloadButtonProps) {
         onClick={() => setIsOpen(!isOpen)}
         style={{ padding: '0 12px' }}
         aria-label="More download options"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
         ▼
       </button>
@@ -124,6 +138,8 @@ export default function DownloadButton({ owner, repo }: DownloadButtonProps) {
           ))}
           <a
             href={`https://github.com/${owner}/${repo}/releases/`}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               padding: '12px 16px',
               textDecoration: 'none',
