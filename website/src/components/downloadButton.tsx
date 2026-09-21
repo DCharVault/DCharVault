@@ -19,8 +19,8 @@ export default function DownloadButton({ owner, repo }: DownloadButtonProps) {
       const ua = window.navigator.userAgent;
       if (ua.includes('Win')) setOs('Windows');
       else if (ua.includes('Mac')) setOs('macOS');
-      else if (ua.includes('Linux')) setOs('Linux');
       else if (ua.includes('Android')) setOs('Android');
+      else if (ua.includes('Linux')) setOs('Linux');
     }
   }, []);
 
