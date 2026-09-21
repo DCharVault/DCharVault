@@ -4,6 +4,7 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Heading from '@theme/Heading';
+import DownloadButton from "@site/src/components/downloadButton";
 
 type FeatureItem = {
   title: string;
@@ -89,11 +90,9 @@ function HomepageHeader() {
             to="/docs/intro">
             Get Started →
           </Link>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/ARCHITECTURE">
-            Explore Architecture
-          </Link>
+          <div>
+            <DownloadButton owner='DCharVault' repo='DCharVault'/>
+          </div>
         </div>
       </div>
     </header>
