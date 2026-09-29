@@ -21,7 +21,7 @@ void TextAnalyzer::calculateCount(QQuickTextDocument* doc)
         while (finder.toNextBoundary()!=-1)
         {
             //count when the finder hits the actual start of a word
-            if (finder.boundaryReasons() && QTextBoundaryFinder::StartOfItem)
+            if (finder.boundaryReasons() & QTextBoundaryFinder::StartOfItem)
             {
                 m_wordsCount++;
             }

@@ -6,10 +6,10 @@
 
 class TextAnalyzer : public QObject
 {
-    Q_PROPERTY(quint64 m_charsCount READ getCharsCount NOTIFY countChanged)
-    Q_PROPERTY(quint64 m_wordsCount READ getWordsCount NOTIFY countChanged)
-
     Q_OBJECT
+    Q_PROPERTY(quint64 charsCount READ getCharsCount NOTIFY countChanged)
+    Q_PROPERTY(quint64 wordsCount READ getWordsCount NOTIFY countChanged)
+
 public:
     explicit TextAnalyzer(QObject *parent = nullptr);
 

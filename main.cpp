@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     engine.setNetworkAccessManagerFactory(&namFactory);
 
     qmlRegisterType<SecurePasswordInput>("Vault.Security",1,0,"SecurePasswordInput");
-    qmlRegisterType<TextAnalyzer>("Vault.Core",1,0,"TestAnalyzer");
+    qmlRegisterType<TextAnalyzer>("Vault.Core",1,0,"TextAnalyzer");
 
     engine.rootContext()->setContextProperty("loginViewModel", &loginVM);
     engine.rootContext()->setContextProperty("diaryViewModel",&diaryVM);
