@@ -37,7 +37,9 @@ Page {
     onEntryContentChanged: {
         richTextController.setDocumentHtml(entryContent)
         root.refreshCheckboxOverlay()
+        textAnalyzer.calculateCount(editorArea.textDocument)
     }
+
     property alias readOnly: editorArea.readOnly
 
     function tryNavigateTo(entryId, entryTitle) {
@@ -49,9 +51,11 @@ Page {
             loadEntry(entryId, entryTitle)
         }
     }
+
     function loadEntry(entryId, entryTitle) {
         root.currentEntryId = entryId
         root.entryTitle = entryTitle
+        root.entryContent = ""
         root.entryContent = diaryViewModel.loadEntryContent(entryId)
         editorArea.textDocument.modified = false
         root.isDirtyState = false
@@ -85,6 +89,7 @@ Page {
             richTextController.setDocumentHtml("")
             editorArea.textDocument.modified = false
             root.isDirtyState = false
+            textAnalyzer.calculateCount(editorArea.textDocument)
         }
     }
 
@@ -288,6 +293,15 @@ Page {
     RichTextController {
         id: richTextController
         textDocument: editorArea.textDocument
+    }
+    TextAnalyzer{
+        id: textAnalyzer
+    }
+    Timer{
+        id: countDebounceTimer
+        interval: 60
+        repeat: false
+        onTriggered: textAnalyzer.calculateCount(editorArea.textDocument)
     }
 
 
@@ -517,6 +531,7 @@ Page {
                     root.isDirtyState = true
                     // Refresh checkbox overlay in case the user pressed Enter or deleted a block
                     root.refreshCheckboxOverlay()
+                    countDebounceTimer.restart()
                 }
                 onCursorPositionChanged: {
                     if (editorArea.inputMethodComposing)
@@ -597,5 +612,40 @@ Page {
             }
 
         }
+
+        // bottom bar
+        Rectangle {
+            id: floatingFooterBar
+            Layout.fillWidth: true
+            Layout.preferredHeight: 44
+            color: ThemeManager.bgCard
+            border.color: ThemeManager.lineBorder
+            border.width: 1
+            radius: ThemeManager.radiusDefault
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                spacing: 8
+
+                //right-aligned
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                DCharRoundPill {
+                    label: "Words"
+                    value: textAnalyzer.wordsCount.toString()
+                    tooltipText: "Total words in this entry"
+                }
+                DCharRoundPill {
+                    label: "Chars"
+                    value: textAnalyzer.charsCount.toString()
+                    tooltipText: "Total characters in this entry"
+                }
+            }
+        }
+
     }
 }
