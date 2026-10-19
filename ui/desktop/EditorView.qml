@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 import QtQuick.Dialogs
+import Vault.Core 1.0
 import DCharVault
 
 Page {
@@ -37,6 +38,7 @@ Page {
     onEntryContentChanged: {
         richTextController.setDocumentHtml(entryContent)
         root.refreshCheckboxOverlay()
+        toolAnalyzer.calculateCount(editorArea.textDocument)
     }
     property alias readOnly: editorArea.readOnly
 
@@ -85,6 +87,7 @@ Page {
             richTextController.setDocumentHtml("")
             editorArea.textDocument.modified = false
             root.isDirtyState = false
+            textAnalyzer.calculateCount(editorArea.textDocument)
         }
     }
 
@@ -289,7 +292,9 @@ Page {
         id: richTextController
         textDocument: editorArea.textDocument
     }
-
+    TextAnalyzer{
+        id: textAnalyzer
+    }
 
     ColorDialog {
         id: colorPickerDialog
@@ -517,6 +522,7 @@ Page {
                     root.isDirtyState = true
                     // Refresh checkbox overlay in case the user pressed Enter or deleted a block
                     root.refreshCheckboxOverlay()
+                    textAnalyzer.calculateCount(editorArea.textDocument)
                 }
                 onCursorPositionChanged: {
                     if (editorArea.inputMethodComposing)
@@ -597,5 +603,40 @@ Page {
             }
 
         }
+
+        // bottom bar
+        Rectangle {
+            id: floatingFooterBar
+            Layout.fillWidth: true
+            Layout.preferredHeight: 44
+            color: ThemeManager.bgCard
+            border.color: ThemeManager.lineBorder
+            border.width: 1
+            radius: ThemeManager.radiusDefault
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                spacing: 8
+
+                //right-aligned
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                DCharRoundPill {
+                    label: "Words"
+                    value: textAnalyzer.wordsCount.toString()
+                    tooltipText: "Total words in this entry"
+                }
+                DCharRoundPill {
+                    label: "Chars"
+                    value: textAnalyzer.charsCount.toString()
+                    tooltipText: "Total characters in this entry"
+                }
+            }
+        }
+
     }
 }

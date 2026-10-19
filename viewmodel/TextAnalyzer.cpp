@@ -3,32 +3,46 @@
 #include <QTextBlock>
 #include <QTextDocument>
 #include <QTextBoundaryFinder>
+#include <QRegularExpression>
 
 TextAnalyzer::TextAnalyzer(QObject *parent) : QObject(parent), m_charsCount(0), m_wordsCount(0){}
 
 void TextAnalyzer::calculateCount(QQuickTextDocument* doc)
 {
-    if (!doc || !doc->textDocument()) return;
+    if (!doc || !doc->textDocument())
+    {
+        if (m_charsCount!=0 || m_wordsCount!=0) {
+            m_charsCount = 0;
+            m_wordsCount = 0;
+            emit countChanged();
+        }
+        return;
+    }
 
     QTextDocument* textDoc = doc->textDocument();
-    m_wordsCount = 0;
-    m_charsCount = 0;
-    for (QTextBlock textBlock = textDoc->begin(); textBlock.isValid(); textBlock = textBlock.next()) // iterate through the document one paragraph (block) at a time
-    {
-        QString text = textBlock.text();
-        m_charsCount += text.length();
-        QTextBoundaryFinder finder(QTextBoundaryFinder::Word, text);
-        while (finder.toNextBoundary()!=-1)
-        {
-            //count when the finder hits the actual start of a word
-            if (finder.boundaryReasons() & QTextBoundaryFinder::StartOfItem)
-            {
-                m_wordsCount++;
-            }
+    QString fullText = textDoc->toPlainText();
+
+    quint64 newChars = 0;
+    for (QChar ch : fullText) {
+        if (!ch.isSpace()) {
+            newChars++;
         }
     }
 
-    emit countChanged();
+    QStringList rawWords = fullText.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    quint64 newWords = 0;
+    QRegularExpression alphanumericCheck(".*[A-Za-z0-9].*");
+    for (const QString &word : rawWords) {
+        if (alphanumericCheck.match(word).hasMatch()) {
+            newWords++;
+        }
+    }
+
+    if (newChars != m_charsCount || newWords != m_wordsCount) {
+        m_charsCount = newChars;
+        m_wordsCount = newWords;
+        emit countChanged();
+    }
 }
 
 [[nodiscard]] quint64 TextAnalyzer::getCharsCount() const

@@ -17,8 +17,8 @@ public:
 
     [[nodiscard]] quint64 getCharsCount() const;
     [[nodiscard]] quint64 getWordsCount() const;
-signals:
-    void countChanged();
+    signals:
+        void countChanged();
 private:
     quint64 m_charsCount;
     quint64 m_wordsCount;
