@@ -2,39 +2,62 @@
 
 #include <QTextBlock>
 #include <QTextDocument>
-#include <QTextBoundaryFinder>
-#include <QRegularExpression>
 
-TextAnalyzer::TextAnalyzer(QObject *parent) : QObject(parent), m_charsCount(0), m_wordsCount(0){}
+TextAnalyzer::TextAnalyzer(QObject *parent)
+    : QObject(parent), m_charsCount(0), m_wordsCount(0) {}
 
-void TextAnalyzer::calculateCount(QQuickTextDocument* doc)
+void TextAnalyzer::reset()
 {
-    if (!doc || !doc->textDocument())
-    {
-        if (m_charsCount!=0 || m_wordsCount!=0) {
-            m_charsCount = 0;
-            m_wordsCount = 0;
-            emit countChanged();
-        }
+    if (m_charsCount != 0 || m_wordsCount != 0) {
+        m_charsCount = 0;
+        m_wordsCount = 0;
+        emit countChanged();
+    }
+}
+
+void TextAnalyzer::calculateCount(QQuickTextDocument *doc)
+{
+    if (!doc || !doc->textDocument()) {
+        reset();
         return;
     }
 
-    QTextDocument* textDoc = doc->textDocument();
-    QString fullText = textDoc->toPlainText();
-
+    const QTextDocument *textDoc = doc->textDocument();
     quint64 newChars = 0;
-    for (QChar ch : fullText) {
-        if (!ch.isSpace()) {
-            newChars++;
-        }
-    }
-
-    QStringList rawWords = fullText.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
     quint64 newWords = 0;
-    QRegularExpression alphanumericCheck(".*[A-Za-z0-9].*");
-    for (const QString &word : rawWords) {
-        if (alphanumericCheck.match(word).hasMatch()) {
+
+    for (QTextBlock block = textDoc->begin(); block.isValid(); block = block.next()) {
+        QString blockText = block.text();
+        bool inToken = false;
+        bool tokenHasAlnum = false;
+
+        for (const QChar ch : std::as_const(blockText)) {
+            // Ignore zero-width checkbox markers if ever present
+            if (ch == u'\u200B') {
+                continue;
+            }
+
+            if (!ch.isSpace()) {
+                newChars++;
+                inToken = true;
+                if (!tokenHasAlnum && ch.isLetterOrNumber()) {
+                    tokenHasAlnum = true;
+                }
+            } else {
+                if (inToken && tokenHasAlnum) {
+                    newWords++;
+                }
+                inToken = false;
+                tokenHasAlnum = false;
+            }
+        }
+
+        if (inToken && tokenHasAlnum) {
             newWords++;
+        }
+
+        if (!blockText.isEmpty()) {
+            blockText.fill(u'\0');
         }
     }
 
@@ -45,11 +68,12 @@ void TextAnalyzer::calculateCount(QQuickTextDocument* doc)
     }
 }
 
-[[nodiscard]] quint64 TextAnalyzer::getCharsCount() const
+[[nodiscard]] quint64 TextAnalyzer::getCharsCount() const noexcept
 {
     return m_charsCount;
 }
-[[nodiscard]] quint64 TextAnalyzer::getWordsCount() const
+
+[[nodiscard]] quint64 TextAnalyzer::getWordsCount() const noexcept
 {
     return m_wordsCount;
 }

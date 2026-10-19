@@ -14,7 +14,6 @@
 #include "viewmodel/SecureNetworkManager.h"
 #include "viewmodel/DiarySearchModel.h"
 #include "viewmodel/PriorityViewModel.h"
-#include "viewmodel/TextAnalyzer.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -61,7 +60,6 @@ int main(int argc, char *argv[])
     engine.setNetworkAccessManagerFactory(&namFactory);
 
     qmlRegisterType<SecurePasswordInput>("Vault.Security",1,0,"SecurePasswordInput");
-    qmlRegisterType<TextAnalyzer>("Vault.Core",1,0,"TextAnalyzer");
 
     engine.rootContext()->setContextProperty("loginViewModel", &loginVM);
     engine.rootContext()->setContextProperty("diaryViewModel",&diaryVM);

@@ -63,13 +63,14 @@ Rectangle{
     ToolTip.visible: root.tooltipText !== "" && mouseArea.containsMouse
     ToolTip.text: root.tooltipText
     ToolTip.delay: 400
-    MouseArea{
+    MouseArea {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-        cursorShape:  root.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
-        onClicked:{
-            if(root.interactive)
+        acceptedButtons: root.interactive ? Qt.LeftButton : Qt.NoButton
+        cursorShape: root.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
+        onClicked: {
+            if (root.interactive)
                 root.clicked()
         }
     }

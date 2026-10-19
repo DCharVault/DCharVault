@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 import QtQuick.Dialogs
-import Vault.Core 1.0
 import DCharVault
 
 Page {
@@ -38,8 +37,9 @@ Page {
     onEntryContentChanged: {
         richTextController.setDocumentHtml(entryContent)
         root.refreshCheckboxOverlay()
-        toolAnalyzer.calculateCount(editorArea.textDocument)
+        textAnalyzer.calculateCount(editorArea.textDocument)
     }
+
     property alias readOnly: editorArea.readOnly
 
     function tryNavigateTo(entryId, entryTitle) {
@@ -51,9 +51,11 @@ Page {
             loadEntry(entryId, entryTitle)
         }
     }
+
     function loadEntry(entryId, entryTitle) {
         root.currentEntryId = entryId
         root.entryTitle = entryTitle
+        root.entryContent = ""
         root.entryContent = diaryViewModel.loadEntryContent(entryId)
         editorArea.textDocument.modified = false
         root.isDirtyState = false
@@ -295,6 +297,13 @@ Page {
     TextAnalyzer{
         id: textAnalyzer
     }
+    Timer{
+        id: countDebounceTimer
+        interval: 60
+        repeat: false
+        onTriggered: textAnalyzer.calculateCount(editorArea.textDocument)
+    }
+
 
     ColorDialog {
         id: colorPickerDialog
@@ -522,7 +531,7 @@ Page {
                     root.isDirtyState = true
                     // Refresh checkbox overlay in case the user pressed Enter or deleted a block
                     root.refreshCheckboxOverlay()
-                    textAnalyzer.calculateCount(editorArea.textDocument)
+                    countDebounceTimer.restart()
                 }
                 onCursorPositionChanged: {
                     if (editorArea.inputMethodComposing)
