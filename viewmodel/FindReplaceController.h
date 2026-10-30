@@ -60,7 +60,7 @@ private:
     QTextDocument* document() const;
     void clearHighlights();
     void applyHighlights();
-    void navigateToMatch(int index);
+    void navigateToMatch();
 
     static void secureWipeQString(QString &str);
 };

@@ -45,10 +45,32 @@ void FindReplaceController::findAll(const QString &searchTerm)
 
 void FindReplaceController::findNext()
 {
+    if (m_matches.isEmpty())
+    {
+        return;
+    }
+
+    m_currentIndex++;
+    if (m_currentIndex>=m_matches.length())
+    {
+        m_currentIndex = 0;
+    }
+    navigateToMatch();
 }
 
 void FindReplaceController::findPrevious()
 {
+    if (m_matches.isEmpty())
+    {
+        return;
+    }
+
+    m_currentIndex--;
+    if (m_currentIndex<0)
+    {
+        m_currentIndex = m_matches.length()-1;
+    }
+    navigateToMatch();
 }
 
 void FindReplaceController::replaceCurrent(const QString &replacement)
@@ -122,8 +144,18 @@ void FindReplaceController::applyHighlights()
 {
 }
 
-void FindReplaceController::navigateToMatch(int index)
+void FindReplaceController::navigateToMatch()
 {
+    if (m_currentIndex < 0 || m_currentIndex >= m_matches.length()) {
+        return;
+    }
+
+    emit currentMatchChanged();
+
+    QTextCursor currentCursorSelection = m_matches[m_currentIndex];
+    int absolutePos = currentCursorSelection.position();
+
+    emit scrollToPosition(absolutePos);
 }
 
 void FindReplaceController::secureWipeQString(QString &str)
