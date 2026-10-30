@@ -75,6 +75,29 @@ void FindReplaceController::findPrevious()
 
 void FindReplaceController::replaceCurrent(const QString &replacement)
 {
+    if (m_matches.isEmpty() || m_currentIndex<0 || m_currentIndex >= m_matches.length())
+    {
+        return;
+    }
+
+    QTextCursor currentCursorSelection = m_matches[m_currentIndex];
+    currentCursorSelection.insertText(replacement);
+
+    m_matches.removeAt(m_currentIndex);
+    if (m_currentIndex>=m_matches.length())
+    {
+        m_currentIndex = 0;
+    }
+
+    if (m_matches.isEmpty())
+    {
+        m_currentIndex = -1;
+        emit currentMatchChanged();
+    }else
+    {
+        navigateToMatch();
+    }
+    emit matchesChanged();
 }
 
 void FindReplaceController::replaceAll(const QString &replacement)
