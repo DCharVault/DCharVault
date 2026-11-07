@@ -106,15 +106,27 @@ void FindReplaceController::replaceAll(const QString &replacement)
 
 void FindReplaceController::purge()
 {
+    m_matches.clear();
+    m_currentIndex = -1;
+
+    m_lastSearchTerm = SecureString(); //forced deallocation
+
+    clearHighlights();
+    emit matchesChanged();
+    emit currentMatchChanged();
 }
 
 QQuickTextDocument* FindReplaceController::textDocument() const
 {
-    return nullptr;
+    return m_textDocument;
 }
 
 void FindReplaceController::setTextDocument(QQuickTextDocument *doc)
 {
+    if (m_textDocument == doc) return;
+
+    m_textDocument = doc;
+    emit textDocumentChanged();
 }
 
 int FindReplaceController::matchCount() const
@@ -139,6 +151,9 @@ bool FindReplaceController::caseSensitive() const
 
 void FindReplaceController::setCaseSensitive(bool cs)
 {
+    if (cs==m_caseSensitive) return;
+    m_caseSensitive = cs;
+    emit optionsChanged();
 }
 
 bool FindReplaceController::wholeWord() const
@@ -148,6 +163,9 @@ bool FindReplaceController::wholeWord() const
 
 void FindReplaceController::setWholeWord(bool w)
 {
+    if (w==m_wholeWord) return;
+    m_wholeWord = w;
+    emit optionsChanged();
 }
 
 QTextDocument* FindReplaceController::document() const
@@ -183,4 +201,9 @@ void FindReplaceController::navigateToMatch()
 
 void FindReplaceController::secureWipeQString(QString &str)
 {
+    if (str.isEmpty()) return;
+
+    str.detach();
+    sodium_memzero(str.data(),str.capacity()*sizeof(QChar));
+    str.clear();
 }
