@@ -23,11 +23,11 @@ public:
     explicit FindReplaceController(QObject *parent = nullptr);
     ~FindReplaceController();
 
-    Q_INVOKABLE void findAll(const QString &searchTerm);
+    Q_INVOKABLE void findAll(QString searchTerm);
     Q_INVOKABLE void findNext();
     Q_INVOKABLE void findPrevious();
-    Q_INVOKABLE void replaceCurrent(const QString &replacement);
-    Q_INVOKABLE void replaceAll(const QString &replacement);
+    Q_INVOKABLE void replaceCurrent(QString replacement);
+    Q_INVOKABLE void replaceAll(QString replacement);
 
     Q_INVOKABLE void purge(); // wipe all state
 
@@ -47,6 +47,7 @@ signals:
     void currentMatchChanged();
     void optionsChanged();
     void scrollToPosition(int position);
+    void textModified();
 
 private:
     QQuickTextDocument *m_textDocument = nullptr;

@@ -1,6 +1,7 @@
 #include "FindReplaceController.h"
 
 #include <QTextBlock>
+#include <pstl/algorithm_impl.h>
 
 FindReplaceController::FindReplaceController(QObject *parent)
     : QObject(parent)
@@ -11,13 +12,14 @@ FindReplaceController::~FindReplaceController()
 {
 }
 
-void FindReplaceController::findAll(const QString &searchTerm)
+void FindReplaceController::findAll(QString searchTerm)
 {
     QTextDocument *doc = document();
     if (!doc)
     {
         return;
     }
+    clearHighlights();
 
     Qt::CaseSensitivity sensitive = (m_caseSensitive) ? Qt::CaseSensitive : Qt::CaseInsensitive;
 
@@ -40,7 +42,25 @@ void FindReplaceController::findAll(const QString &searchTerm)
             posWord = currBlock.text().indexOf(searchTerm,startIndex,sensitive);
         }
     }
+    if (m_matches.isEmpty())
+    {
+        m_currentIndex = -1;
+    }
+    else
+    {
+        m_currentIndex = 0;
+    }
+    emit matchesChanged();
+    emit currentMatchChanged();
 
+    QByteArray utf8search = searchTerm.toUtf8();
+    SecureString tempSecure(utf8search.begin(), utf8search.end());
+    m_lastSearchTerm = std::move(tempSecure);
+    sodium_memzero(utf8search.data(),utf8search.size());
+
+    applyHighlights();
+
+    secureWipeQString(searchTerm);
 }
 
 void FindReplaceController::findNext()
@@ -49,13 +69,14 @@ void FindReplaceController::findNext()
     {
         return;
     }
-
+    clearHighlights();
     m_currentIndex++;
     if (m_currentIndex>=m_matches.length())
     {
         m_currentIndex = 0;
     }
     navigateToMatch();
+    applyHighlights();
 }
 
 void FindReplaceController::findPrevious()
@@ -64,22 +85,24 @@ void FindReplaceController::findPrevious()
     {
         return;
     }
-
+    clearHighlights();
     m_currentIndex--;
     if (m_currentIndex<0)
     {
         m_currentIndex = m_matches.length()-1;
     }
     navigateToMatch();
+    applyHighlights();
 }
 
-void FindReplaceController::replaceCurrent(const QString &replacement)
+void FindReplaceController::replaceCurrent(QString replacement)
 {
     if (m_matches.isEmpty() || m_currentIndex<0 || m_currentIndex >= m_matches.length())
     {
         return;
     }
 
+    clearHighlights();
     QTextCursor currentCursorSelection = m_matches[m_currentIndex];
     currentCursorSelection.insertText(replacement);
 
@@ -98,20 +121,45 @@ void FindReplaceController::replaceCurrent(const QString &replacement)
         navigateToMatch();
     }
     emit matchesChanged();
+    emit textModified();
+    applyHighlights();
+    secureWipeQString(replacement);
 }
 
-void FindReplaceController::replaceAll(const QString &replacement)
+void FindReplaceController::replaceAll(QString replacement)
 {
+    if (m_matches.isEmpty())
+    {
+        return;
+    }
+    clearHighlights();
+
+    QTextCursor firstCursor = m_matches.first();
+    firstCursor.beginEditBlock();
+
+    for (int i = m_matches.length()-1; i>=0; i--) {
+        QTextCursor cursor = m_matches.at(i);
+        cursor.insertText(replacement);
+    }
+
+    firstCursor.endEditBlock();
+    m_matches.clear();
+    m_currentIndex = -1;
+    emit matchesChanged();
+    emit currentMatchChanged();
+    emit textModified();
+    applyHighlights();
+    secureWipeQString(replacement);
 }
 
 void FindReplaceController::purge()
 {
+    clearHighlights();
     m_matches.clear();
     m_currentIndex = -1;
 
     m_lastSearchTerm = SecureString(); //forced deallocation
 
-    clearHighlights();
     emit matchesChanged();
     emit currentMatchChanged();
 }
@@ -131,22 +179,22 @@ void FindReplaceController::setTextDocument(QQuickTextDocument *doc)
 
 int FindReplaceController::matchCount() const
 {
-    return 0;
+    return m_matches.length();
 }
 
 int FindReplaceController::currentMatch() const
 {
-    return 0;
+    return m_currentIndex+1;
 }
 
 bool FindReplaceController::hasMatches() const
 {
-    return false;
+    return !m_matches.isEmpty();
 }
 
 bool FindReplaceController::caseSensitive() const
 {
-    return false;
+    return m_caseSensitive;
 }
 
 void FindReplaceController::setCaseSensitive(bool cs)
@@ -179,10 +227,42 @@ QTextDocument* FindReplaceController::document() const
 
 void FindReplaceController::clearHighlights()
 {
+    if (m_matches.isEmpty())
+    {
+        return;
+    }
+    QTextCharFormat fmtClear = QTextCharFormat();
+    fmtClear.clearBackground();
+
+    for (int i=0; i<m_matches.length(); i++)
+    {
+        QTextCursor cursor = m_matches.at(i);
+        cursor.mergeCharFormat(fmtClear);
+    }
 }
 
 void FindReplaceController::applyHighlights()
 {
+    if (m_matches.isEmpty())
+    {
+        return;
+    }
+    QTextCharFormat fmtMatches = QTextCharFormat();
+    fmtMatches.setBackground(QBrush(QBrush(QColor(Qt::yellow))));
+
+    QTextCharFormat fmtActiveMatch = QTextCharFormat();
+    fmtActiveMatch.setBackground(QBrush(QBrush(QColor(Qt::green))));
+
+    for (int i=0; i<m_matches.length(); ++i) {
+        QTextCursor cursor = m_matches.at(i);
+        if (i==m_currentIndex)
+        {
+            cursor.mergeCharFormat(fmtActiveMatch);
+        }else
+        {
+            cursor.mergeCharFormat(fmtMatches);
+        }
+    }
 }
 
 void FindReplaceController::navigateToMatch()
