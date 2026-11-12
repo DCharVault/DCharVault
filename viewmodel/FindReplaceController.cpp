@@ -1,7 +1,6 @@
 #include "FindReplaceController.h"
 
 #include <QTextBlock>
-#include <pstl/algorithm_impl.h>
 
 FindReplaceController::FindReplaceController(QObject *parent)
     : QObject(parent)
@@ -15,41 +14,36 @@ FindReplaceController::~FindReplaceController()
 void FindReplaceController::findAll(QString searchTerm)
 {
     QTextDocument *doc = document();
-    if (!doc)
+    if (!doc || searchTerm.isEmpty())
     {
+        secureWipeQString(searchTerm);
+        clearHighlights();
+        m_matches.clear();
+        m_currentIndex = -1;
+        emit matchesChanged();
+        emit currentMatchChanged();
         return;
     }
+
     clearHighlights();
+    m_matches.clear();
 
-    Qt::CaseSensitivity sensitive = (m_caseSensitive) ? Qt::CaseSensitive : Qt::CaseInsensitive;
+    QTextDocument::FindFlags flags;
+    if (m_caseSensitive) flags |= QTextDocument::FindCaseSensitively;
+    if (m_wholeWord) flags |= QTextDocument::FindWholeWords;
 
-    for (QTextBlock currBlock = doc->firstBlock(); currBlock.isValid(); currBlock = currBlock.next())
+    QTextCursor searchCursor(doc);
+    searchCursor.setPosition(0);
+
+    while (!searchCursor.isNull() && !searchCursor.atEnd())
     {
-        int posWord = currBlock.text().indexOf(searchTerm,0,sensitive);
-        if (posWord < 0)
+        searchCursor = doc->find(searchTerm, searchCursor, flags);
+        if (!searchCursor.isNull())
         {
-            continue;
-        }
-
-        int startIndex = 0;
-        while (startIndex >= 0 && posWord >= 0)
-        {
-            QTextCursor cursor(doc);
-            cursor.setPosition(currBlock.position()+posWord);
-            cursor.setPosition(currBlock.position()+posWord+searchTerm.length(),QTextCursor::KeepAnchor);
-            m_matches.append(cursor);
-            startIndex = posWord+searchTerm.length();
-            posWord = currBlock.text().indexOf(searchTerm,startIndex,sensitive);
+            m_matches.append(searchCursor);
         }
     }
-    if (m_matches.isEmpty())
-    {
-        m_currentIndex = -1;
-    }
-    else
-    {
-        m_currentIndex = 0;
-    }
+    m_currentIndex = m_matches.isEmpty() ? -1 : 0;
     emit matchesChanged();
     emit currentMatchChanged();
 
@@ -206,7 +200,7 @@ void FindReplaceController::setCaseSensitive(bool cs)
 
 bool FindReplaceController::wholeWord() const
 {
-    return false;
+    return m_wholeWord;
 }
 
 void FindReplaceController::setWholeWord(bool w)
@@ -248,10 +242,10 @@ void FindReplaceController::applyHighlights()
         return;
     }
     QTextCharFormat fmtMatches = QTextCharFormat();
-    fmtMatches.setBackground(QBrush(QBrush(QColor(Qt::yellow))));
-
     QTextCharFormat fmtActiveMatch = QTextCharFormat();
-    fmtActiveMatch.setBackground(QBrush(QBrush(QColor(Qt::green))));
+
+    fmtMatches.setBackground(QBrush(Qt::yellow));
+    fmtActiveMatch.setBackground(QBrush(Qt::green));
 
     for (int i=0; i<m_matches.length(); ++i) {
         QTextCursor cursor = m_matches.at(i);
@@ -274,7 +268,7 @@ void FindReplaceController::navigateToMatch()
     emit currentMatchChanged();
 
     QTextCursor currentCursorSelection = m_matches[m_currentIndex];
-    int absolutePos = currentCursorSelection.position();
+    int absolutePos = currentCursorSelection.selectionStart();
 
     emit scrollToPosition(absolutePos);
 }
