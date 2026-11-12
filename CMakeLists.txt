@@ -95,6 +95,8 @@ target_include_directories(DCharVault_Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 qt_add_executable(appDCharVault
     main.cpp
+        viewmodel/FindReplaceController.h
+        viewmodel/FindReplaceController.cpp
 )
 
 # static DCharVault_Core linking to appDCharVault
