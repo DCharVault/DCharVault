@@ -95,8 +95,6 @@ target_include_directories(DCharVault_Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 qt_add_executable(appDCharVault
     main.cpp
-        viewmodel/FindReplaceController.h
-        viewmodel/FindReplaceController.cpp
 )
 
 # static DCharVault_Core linking to appDCharVault
@@ -180,6 +178,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/DiarySearchModel.h
         viewmodel/PriorityViewModel.h
         viewmodel/TextAnalyzer.h
+        viewmodel/FindReplaceController.h
 
         viewmodel/LoginViewModel.cpp
         viewmodel/DiaryViewModel.cpp
@@ -193,6 +192,7 @@ qt_add_qml_module(appDCharVault
         viewmodel/DiarySearchModel.cpp
         viewmodel/PriorityViewModel.cpp
         viewmodel/TextAnalyzer.cpp
+        viewmodel/FindReplaceController.cpp
 )
 
 # The auto-generated qmltyperegistrations.cpp does #include <TextHighlighter.h>

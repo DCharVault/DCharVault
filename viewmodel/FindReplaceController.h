@@ -21,7 +21,7 @@ class FindReplaceController : public QObject {
 
 public:
     explicit FindReplaceController(QObject *parent = nullptr);
-    ~FindReplaceController();
+    ~FindReplaceController() override;
 
     Q_INVOKABLE void findAll(QString searchTerm);
     Q_INVOKABLE void findNext();
@@ -40,6 +40,8 @@ public:
     void setCaseSensitive(bool cs);
     bool wholeWord() const;
     void setWholeWord(bool w);
+
+    static void secureWipeQString(QString &str);
 
 signals:
     void textDocumentChanged();
@@ -62,8 +64,7 @@ private:
     void clearHighlights();
     void applyHighlights();
     void navigateToMatch();
-
-    static void secureWipeQString(QString &str);
+    void reindexMatches(int preferredTargetPos = -1);
 };
 
 #endif //DCHARVAULT_FINDREPLACECONTROLLER_H
