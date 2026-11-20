@@ -1,6 +1,18 @@
 #include "FindReplaceController.h"
 
 #include <QTextBlock>
+#include <QColor>
+#include <QBrush>
+#include <utility>
+
+namespace {
+    struct ScopedWiper {
+        QString &target;
+        ~ScopedWiper() {
+            FindReplaceController::secureWipeQString(target);
+        }
+    };
+}
 
 FindReplaceController::FindReplaceController(QObject *parent)
     : QObject(parent)
@@ -9,17 +21,20 @@ FindReplaceController::FindReplaceController(QObject *parent)
 
 FindReplaceController::~FindReplaceController()
 {
+    purge();
 }
 
 void FindReplaceController::findAll(QString searchTerm)
 {
+    ScopedWiper wiper(searchTerm);
+
     QTextDocument *doc = document();
     if (!doc || searchTerm.isEmpty())
     {
-        secureWipeQString(searchTerm);
         clearHighlights();
         m_matches.clear();
         m_currentIndex = -1;
+        m_lastSearchTerm = SecureString();
         emit matchesChanged();
         emit currentMatchChanged();
         return;
@@ -47,14 +62,18 @@ void FindReplaceController::findAll(QString searchTerm)
     emit matchesChanged();
     emit currentMatchChanged();
 
+    // Securely cache search term in guarded memory
     QByteArray utf8search = searchTerm.toUtf8();
     SecureString tempSecure(utf8search.begin(), utf8search.end());
     m_lastSearchTerm = std::move(tempSecure);
-    sodium_memzero(utf8search.data(),utf8search.size());
+    sodium_memzero(utf8search.data(), utf8search.size());
 
     applyHighlights();
 
-    secureWipeQString(searchTerm);
+    if (m_currentIndex >= 0)
+    {
+        navigateToMatch();
+    }
 }
 
 void FindReplaceController::findNext()
@@ -65,7 +84,7 @@ void FindReplaceController::findNext()
     }
     clearHighlights();
     m_currentIndex++;
-    if (m_currentIndex>=m_matches.length())
+    if (m_currentIndex >= m_matches.length())
     {
         m_currentIndex = 0;
     }
@@ -81,9 +100,9 @@ void FindReplaceController::findPrevious()
     }
     clearHighlights();
     m_currentIndex--;
-    if (m_currentIndex<0)
+    if (m_currentIndex < 0)
     {
-        m_currentIndex = m_matches.length()-1;
+        m_currentIndex = m_matches.length() - 1;
     }
     navigateToMatch();
     applyHighlights();
@@ -91,59 +110,64 @@ void FindReplaceController::findPrevious()
 
 void FindReplaceController::replaceCurrent(QString replacement)
 {
-    if (m_matches.isEmpty() || m_currentIndex<0 || m_currentIndex >= m_matches.length())
+    ScopedWiper wiper(replacement);
+
+    if (m_matches.isEmpty() || m_currentIndex < 0 || m_currentIndex >= m_matches.length())
     {
         return;
     }
 
     clearHighlights();
     QTextCursor currentCursorSelection = m_matches[m_currentIndex];
+    currentCursorSelection.beginEditBlock();
     currentCursorSelection.insertText(replacement);
+    currentCursorSelection.endEditBlock();
 
-    m_matches.removeAt(m_currentIndex);
-    if (m_currentIndex>=m_matches.length())
-    {
-        m_currentIndex = 0;
-    }
+    const int nextSearchPos = currentCursorSelection.position();
 
-    if (m_matches.isEmpty())
-    {
-        m_currentIndex = -1;
-        emit currentMatchChanged();
-    }else
+    // Re-index remaining occurrences to avoid offset skew
+    reindexMatches(nextSearchPos);
+
+    emit textModified();
+
+    if (!m_matches.isEmpty())
     {
         navigateToMatch();
+        applyHighlights();
     }
-    emit matchesChanged();
-    emit textModified();
-    applyHighlights();
-    secureWipeQString(replacement);
 }
 
 void FindReplaceController::replaceAll(QString replacement)
 {
+    ScopedWiper wiper(replacement);
+
     if (m_matches.isEmpty())
     {
         return;
     }
     clearHighlights();
 
-    QTextCursor firstCursor = m_matches.first();
-    firstCursor.beginEditBlock();
+    QTextDocument *doc = document();
+    if (!doc)
+        return;
 
-    for (int i = m_matches.length()-1; i>=0; i--) {
+    QTextCursor editCursor(doc);
+    editCursor.beginEditBlock();
+
+    for (int i = m_matches.length() - 1; i >= 0; --i) {
         QTextCursor cursor = m_matches.at(i);
         cursor.insertText(replacement);
     }
 
-    firstCursor.endEditBlock();
+    editCursor.endEditBlock();
+
     m_matches.clear();
     m_currentIndex = -1;
+    m_lastSearchTerm = SecureString();
+
     emit matchesChanged();
     emit currentMatchChanged();
     emit textModified();
-    applyHighlights();
-    secureWipeQString(replacement);
 }
 
 void FindReplaceController::purge()
@@ -152,7 +176,7 @@ void FindReplaceController::purge()
     m_matches.clear();
     m_currentIndex = -1;
 
-    m_lastSearchTerm = SecureString(); //forced deallocation
+    m_lastSearchTerm = SecureString(); // forced deallocation via sodium_free
 
     emit matchesChanged();
     emit currentMatchChanged();
@@ -167,7 +191,21 @@ void FindReplaceController::setTextDocument(QQuickTextDocument *doc)
 {
     if (m_textDocument == doc) return;
 
+    purge();
+
+    if (m_textDocument)
+        disconnect(m_textDocument, nullptr, this, nullptr);
+
     m_textDocument = doc;
+
+    if (m_textDocument) {
+        connect(m_textDocument, &QObject::destroyed, this, [this] {
+            m_textDocument = nullptr;
+            purge();
+            emit textDocumentChanged();
+        });
+    }
+
     emit textDocumentChanged();
 }
 
@@ -178,7 +216,7 @@ int FindReplaceController::matchCount() const
 
 int FindReplaceController::currentMatch() const
 {
-    return m_currentIndex+1;
+    return m_currentIndex + 1;
 }
 
 bool FindReplaceController::hasMatches() const
@@ -193,9 +231,16 @@ bool FindReplaceController::caseSensitive() const
 
 void FindReplaceController::setCaseSensitive(bool cs)
 {
-    if (cs==m_caseSensitive) return;
+    if (cs == m_caseSensitive) return;
     m_caseSensitive = cs;
     emit optionsChanged();
+
+    if (!m_lastSearchTerm.empty())
+    {
+        clearHighlights();
+        reindexMatches();
+        applyHighlights();
+    }
 }
 
 bool FindReplaceController::wholeWord() const
@@ -205,9 +250,16 @@ bool FindReplaceController::wholeWord() const
 
 void FindReplaceController::setWholeWord(bool w)
 {
-    if (w==m_wholeWord) return;
+    if (w == m_wholeWord) return;
     m_wholeWord = w;
     emit optionsChanged();
+
+    if (!m_lastSearchTerm.empty())
+    {
+        clearHighlights();
+        reindexMatches();
+        applyHighlights();
+    }
 }
 
 QTextDocument* FindReplaceController::document() const
@@ -225,14 +277,26 @@ void FindReplaceController::clearHighlights()
     {
         return;
     }
-    QTextCharFormat fmtClear = QTextCharFormat();
-    fmtClear.clearBackground();
 
-    for (int i=0; i<m_matches.length(); i++)
+    QTextDocument *doc = document();
+    if (!doc)
+        return;
+
+    const bool wasUndo = doc->isUndoRedoEnabled();
+    const bool wasModified = doc->isModified();
+    doc->setUndoRedoEnabled(false);
+
+    QTextCharFormat fmtClear;
+    fmtClear.setBackground(Qt::NoBrush);
+
+    for (int i = 0; i < m_matches.length(); ++i)
     {
         QTextCursor cursor = m_matches.at(i);
         cursor.mergeCharFormat(fmtClear);
     }
+
+    doc->setUndoRedoEnabled(wasUndo);
+    doc->setModified(wasModified);
 }
 
 void FindReplaceController::applyHighlights()
@@ -241,22 +305,35 @@ void FindReplaceController::applyHighlights()
     {
         return;
     }
-    QTextCharFormat fmtMatches = QTextCharFormat();
-    QTextCharFormat fmtActiveMatch = QTextCharFormat();
 
-    fmtMatches.setBackground(QBrush(Qt::yellow));
-    fmtActiveMatch.setBackground(QBrush(Qt::green));
+    QTextDocument *doc = document();
+    if (!doc)
+        return;
 
-    for (int i=0; i<m_matches.length(); ++i) {
+    const bool wasUndo = doc->isUndoRedoEnabled();
+    const bool wasModified = doc->isModified();
+    doc->setUndoRedoEnabled(false);
+
+    QTextCharFormat fmtMatches;
+    QTextCharFormat fmtActiveMatch;
+
+    // Theme-compatible translucent colors for seamless dark/light mode integration
+    fmtMatches.setBackground(QBrush(QColor(224, 165, 38, 100)));     // Amber tint
+    fmtActiveMatch.setBackground(QBrush(QColor(76, 175, 110, 180)));  // Mint emerald
+
+    for (int i = 0; i < m_matches.length(); ++i) {
         QTextCursor cursor = m_matches.at(i);
-        if (i==m_currentIndex)
+        if (i == m_currentIndex)
         {
             cursor.mergeCharFormat(fmtActiveMatch);
-        }else
+        } else
         {
             cursor.mergeCharFormat(fmtMatches);
         }
     }
+
+    doc->setUndoRedoEnabled(wasUndo);
+    doc->setModified(wasModified);
 }
 
 void FindReplaceController::navigateToMatch()
@@ -273,11 +350,64 @@ void FindReplaceController::navigateToMatch()
     emit scrollToPosition(absolutePos);
 }
 
+void FindReplaceController::reindexMatches(int preferredTargetPos)
+{
+    QTextDocument *doc = document();
+    if (!doc || m_lastSearchTerm.empty())
+    {
+        m_matches.clear();
+        m_currentIndex = -1;
+        emit matchesChanged();
+        emit currentMatchChanged();
+        return;
+    }
+
+    QString searchTerm = QString::fromUtf8(m_lastSearchTerm.data(), static_cast<qsizetype>(m_lastSearchTerm.size()));
+    ScopedWiper wiper(searchTerm);
+
+    m_matches.clear();
+
+    QTextDocument::FindFlags flags;
+    if (m_caseSensitive) flags |= QTextDocument::FindCaseSensitively;
+    if (m_wholeWord) flags |= QTextDocument::FindWholeWords;
+
+    QTextCursor searchCursor(doc);
+    searchCursor.setPosition(0);
+
+    int closestIndex = -1;
+    while (!searchCursor.isNull() && !searchCursor.atEnd())
+    {
+        searchCursor = doc->find(searchTerm, searchCursor, flags);
+        if (!searchCursor.isNull())
+        {
+            if (closestIndex == -1 && preferredTargetPos >= 0 && searchCursor.selectionStart() >= preferredTargetPos)
+            {
+                closestIndex = m_matches.length();
+            }
+            m_matches.append(searchCursor);
+        }
+    }
+
+    if (m_matches.isEmpty())
+    {
+        m_currentIndex = -1;
+    } else if (closestIndex >= 0 && closestIndex < m_matches.length())
+    {
+        m_currentIndex = closestIndex;
+    } else
+    {
+        m_currentIndex = 0;
+    }
+
+    emit matchesChanged();
+    emit currentMatchChanged();
+}
+
 void FindReplaceController::secureWipeQString(QString &str)
 {
-    if (str.isEmpty()) return;
+    if (str.capacity() == 0 || str.data() == nullptr) return;
 
     str.detach();
-    sodium_memzero(str.data(),str.capacity()*sizeof(QChar));
+    sodium_memzero(str.data(), str.capacity() * sizeof(QChar));
     str.clear();
 }
