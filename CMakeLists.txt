@@ -144,6 +144,7 @@ else()
         ui/desktop/EditorToolbar.qml
         ui/desktop/SidebarView.qml
         ui/desktop/HomeView.qml
+        ui/desktop/FindReplaceBar.qml
     )
 endif()
 

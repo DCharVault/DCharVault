@@ -53,6 +53,9 @@ Page {
     }
 
     function loadEntry(entryId, entryTitle) {
+        if (typeof findReplaceBar !== "undefined" && findReplaceBar) {
+            findReplaceBar.closeAndPurge()
+        }
         root.currentEntryId = entryId
         root.entryTitle = entryTitle
         root.entryContent = ""
@@ -60,6 +63,15 @@ Page {
         editorArea.textDocument.modified = false
         root.isDirtyState = false
         root.refreshCheckboxOverlay()
+    }
+
+    Connections {
+        target: diarySessionModel
+        function onSessionLocked() {
+            if (typeof findReplaceBar !== "undefined" && findReplaceBar) {
+                findReplaceBar.closeAndPurge()
+            }
+        }
     }
 
     Connections {
@@ -127,6 +139,18 @@ Page {
         text: "Reload From Disk"
         shortcut: "Ctrl+Shift+R"
         onTriggered: console.log("Reload Triggered! Currently in Development!!")
+    }
+    Action {
+        id: findAction
+        text: "Find"
+        shortcut: StandardKey.Find // Ctrl+F
+        onTriggered: findReplaceBar.openFind()
+    }
+    Action {
+        id: replaceAction
+        text: "Replace"
+        shortcut: StandardKey.Replace // Ctrl+H
+        onTriggered: findReplaceBar.openReplace()
     }
     Action {
         id: undoAction
@@ -304,6 +328,23 @@ Page {
         onTriggered: textAnalyzer.calculateCount(editorArea.textDocument)
     }
 
+    FindReplaceController {
+        id: findReplaceController
+        textDocument: editorArea.textDocument
+
+        onScrollToPosition: function(pos) {
+            editorArea.cursorPosition = pos
+            let rect = editorArea.positionToRectangle(pos)
+            let targetY = rect.y - (editorFlickable.height / 2)
+            editorFlickable.contentY = Math.max(0, Math.min(targetY, editorFlickable.contentHeight - editorFlickable.height))
+        }
+
+        onTextModified: {
+            root.isDirtyState = true
+            countDebounceTimer.restart()
+            root.refreshCheckboxOverlay()
+        }
+    }
 
     ColorDialog {
         id: colorPickerDialog
@@ -484,6 +525,7 @@ Page {
 
         // --- CONTENT EDITOR ---
         Flickable {
+            id: editorFlickable
             Layout.fillWidth: true
             Layout.fillHeight: true
             flickableDirection: Flickable.VerticalFlick
@@ -623,11 +665,33 @@ Page {
             border.width: 1
             radius: ThemeManager.radiusDefault
 
+            // Popup anchored to expand ABOVE floatingFooterBar
+            FindReplaceBar {
+                id: findReplaceBar
+                controller: findReplaceController
+                parent: floatingFooterBar
+                x: 10
+                y: -implicitHeight - 8
+            }
+
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 10
                 anchors.rightMargin: 10
                 spacing: 8
+
+                // Find trigger pill / icon on the left of the footer bar
+                DCharRoundPill {
+                    id: findTriggerBtn
+                    interactive: true
+                    icon: "🔍"
+                    label: "Find"
+                    value: findReplaceController.hasMatches
+                        ? (findReplaceController.currentMatch + "/" + findReplaceController.matchCount)
+                        : "Ctrl+F"
+                    tooltipText: "Find & Replace(Ctrl+F / Ctrl+H)"
+                    onClicked: findReplaceBar.toggle()
+                }
 
                 //right-aligned
                 Item {

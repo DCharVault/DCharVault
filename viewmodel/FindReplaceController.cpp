@@ -119,8 +119,11 @@ void FindReplaceController::replaceCurrent(QString replacement)
 
     clearHighlights();
     QTextCursor currentCursorSelection = m_matches[m_currentIndex];
+    QTextCharFormat preservedFormat = currentCursorSelection.charFormat();
+    preservedFormat.setBackground(Qt::NoBrush);
+
     currentCursorSelection.beginEditBlock();
-    currentCursorSelection.insertText(replacement);
+    currentCursorSelection.insertText(replacement, preservedFormat);
     currentCursorSelection.endEditBlock();
 
     const int nextSearchPos = currentCursorSelection.position();
@@ -156,7 +159,9 @@ void FindReplaceController::replaceAll(QString replacement)
 
     for (int i = m_matches.length() - 1; i >= 0; --i) {
         QTextCursor cursor = m_matches.at(i);
-        cursor.insertText(replacement);
+        QTextCharFormat preservedFormat = cursor.charFormat();
+        preservedFormat.setBackground(Qt::NoBrush);
+        cursor.insertText(replacement, preservedFormat);
     }
 
     editCursor.endEditBlock();
